@@ -6,14 +6,15 @@
 
 #define HIDAMARI_BUFFER_WIDTH HIDAMARI_WIDTH
 #define HIDAMARI_BUFFER_HEIGHT (HIDAMARI_HEIGHT_VISIBLE + 8)
-typedef uint8_t HidamariBuffer[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
+typedef uint16_t HidamariBuffer[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
 
-#define HIDAMARI_FLAG_MASK 240  /* 1111 0000 */
+#define HIDAMARI_FLAG_MASK 15 << 8  /* 1111 0000 0000 */
+/* Hidamari flags are hints for the renderer */
 typedef enum {
-	HIDAMARI_GHOST = 1 << 4, /* 0001 0000 */
+	HIDAMARI_TRANSPARENT = 1 << 8, /* 0001 0000 0000 */
 } HidamariFlag;
 
-#define HIDAMARI_SHAPE_MASK 15  /* 0000 1111 */
+#define HIDAMARI_TILE_MASK 255  /* 1111 1111 */
 typedef enum {
 	HIDAMARI_NONE = 0, /* 0000 0000 */
 	HIDAMARI_I,        /* 0000 0001 */
@@ -64,7 +65,7 @@ typedef struct {
 	Hidamari current; /* Current piece information */
 	/* The grid uses a mailbox representation, with the outer edges being
 	 * permanently frozen wall pieces */
-	uint8_t grid[HIDAMARI_WIDTH][HIDAMARI_HEIGHT];
+	uint16_t grid[HIDAMARI_WIDTH][HIDAMARI_HEIGHT];
 } Playfield;
 
 /* Initialize the playfield. Can be called as many times as you want */

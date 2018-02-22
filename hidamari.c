@@ -197,7 +197,7 @@ get_next_hidamari(Playfield *field)
 
 /* Check if the Hidamari would collide in the given grid, at the given x,y coordinates */
 static bool
-is_collision(int x, int y, Hidamari const *t, uint8_t grid[HIDAMARI_WIDTH][HIDAMARI_HEIGHT])
+is_collision(int x, int y, Hidamari const *t, uint16_t grid[HIDAMARI_WIDTH][HIDAMARI_HEIGHT])
 {
 	int i, j;
 
@@ -355,8 +355,9 @@ update_buffer(HidamariBuffer buf, Playfield *field)
 	int i, j;
 	int x, y;
 	int mlen;
+	char score_buf[10 + 1];
 
-	/* Copy the static hidamaries */
+	/* Copy the static hidamaris */
 	for (i = 0; i < HIDAMARI_WIDTH; ++i) {
 		for (j = 0; j < HIDAMARI_HEIGHT_VISIBLE; ++j) {
 			buf[i][j] = field->grid[i][j];
@@ -369,12 +370,20 @@ update_buffer(HidamariBuffer buf, Playfield *field)
 		for (j = 0; j < 4; ++j) {
 			if (i < mlen ||  j < mlen) {
 				buf[i + HIDAMARI_WIDTH / 2 - mlen / 2 - mlen % 2]
-					[j + HIDAMARI_HEIGHT_VISIBLE + 1] = hidamari_shape_init[field->next[0]][i][j];
+					[j + HIDAMARI_HEIGHT_VISIBLE + 1]
+					= hidamari_shape_init[field->next[0]][i][j];
 			} else {
 				buf[i + HIDAMARI_WIDTH / 2 - mlen / 2 - mlen % 2]
-					[j + HIDAMARI_HEIGHT_VISIBLE + 1] = HIDAMARI_NONE;
+					[j + HIDAMARI_HEIGHT_VISIBLE + 1]
+					= HIDAMARI_NONE;
 			}
 		}
+	}
+
+	/* Write the current score */
+	snprintf(score_buf, sizeof(score_buf), "%010zu", field->score);
+	for (i = sizeof(score_buf) - 1; i > 0; --i) {
+		buf[i][HIDAMARI_BUFFER_HEIGHT - 2] = score_buf[i - 1] - 34;
 	}
 
 	/* Insert the ghost piece */
@@ -388,7 +397,10 @@ update_buffer(HidamariBuffer buf, Playfield *field)
 		for (j = 0; j < mlen; ++j) {
 			if (HIDAMARI_NONE != field->current.matrix[i][j]
 			&& y + j - mlen / 2 < HIDAMARI_HEIGHT_VISIBLE) {
-				buf[x + i - mlen / 2][y + j - mlen / 2] = field->current.matrix[i][j] | HIDAMARI_GHOST;
+				buf[x + i - mlen / 2]
+				   [y + j - mlen / 2]
+				   = field->current.matrix[i][j]
+					   | HIDAMARI_TRANSPARENT;
 			}
 		}
 	}
@@ -400,11 +412,12 @@ update_buffer(HidamariBuffer buf, Playfield *field)
 		for (j = 0; j < mlen; ++j) {
 			if (HIDAMARI_NONE != field->current.matrix[i][j]
 			&& y + j - mlen / 2 < HIDAMARI_HEIGHT_VISIBLE) {
-				buf[x + i - mlen / 2][y + j - mlen / 2] = field->current.matrix[i][j];
+				buf[x + i - mlen / 2]
+					[y + j - mlen / 2]
+					= field->current.matrix[i][j];
 			}
 		}
 	}
-
 }
 
 void

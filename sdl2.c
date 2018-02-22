@@ -18,26 +18,25 @@ render(SDL_Renderer *renderer, SDL_Texture *tileset, HidamariBuffer buf)
 	int i, j;
 	SDL_Rect src_r = {.h = TILE_S, .w = TILE_S, .x = 0, .y = 0};
 	SDL_Rect dest_r = {.h = TILE_S, .w = TILE_S, .x = 0, .y = 0};
-	HidamariFlag flag;
 	HidamariShape tile;
+	HidamariFlag flag;
 
 	SDL_RenderClear(renderer);
 	/* Render the static grid */
 	for (i = 0; i < HIDAMARI_BUFFER_WIDTH; ++i) {
 		for (j = 0; j < HIDAMARI_BUFFER_HEIGHT; ++j) {
+			tile = buf[HIDAMARI_BUFFER_WIDTH - 1 - i][HIDAMARI_BUFFER_HEIGHT - 1 -j] & HIDAMARI_TILE_MASK;
 			flag = buf[HIDAMARI_BUFFER_WIDTH - 1 - i][HIDAMARI_BUFFER_HEIGHT - 1 -j] & HIDAMARI_FLAG_MASK;
-			tile = buf[HIDAMARI_BUFFER_WIDTH - 1 - i][HIDAMARI_BUFFER_HEIGHT - 1 -j] & HIDAMARI_SHAPE_MASK;
 			if (HIDAMARI_NONE == tile)
 				continue;
-			if (HIDAMARI_GHOST == (flag & HIDAMARI_GHOST)) {
-				dest_r.x = TILE_S * (HIDAMARI_BUFFER_WIDTH -1 - i);
-				dest_r.y = TILE_S * j;
+			dest_r.x = TILE_S * (HIDAMARI_BUFFER_WIDTH - 1 - i);
+			dest_r.y = TILE_S * j;
+			if (HIDAMARI_TRANSPARENT == (flag & HIDAMARI_TRANSPARENT)) {
 				SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-				SDL_RenderFillRect(renderer, &dest_r);
+			 	SDL_RenderFillRect(renderer, &dest_r);
 			} else {
-				src_r.x = TILE_S * (tile - 1);
-				dest_r.x = TILE_S * (HIDAMARI_BUFFER_WIDTH -1 - i);
-				dest_r.y = TILE_S * j;
+				src_r.x = TILE_S * (tile % 14);
+				src_r.y = TILE_S * (tile / 14);
 				SDL_RenderCopy(renderer, tileset, &src_r, &dest_r);
 			}
 		}
