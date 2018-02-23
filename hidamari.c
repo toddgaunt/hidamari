@@ -13,8 +13,8 @@
 static double const drop_time = 1.0;
 static uint8_t const slide_time = 15;
 
-static void
-r7system(HidamariShape bag[7]);
+static void r7system(HidamariShape bag[7]);
+static void field_init(HidamariBuffer *buf, Playfield *field);
 
 /* Gravity of the falling piece at certain levels */
 static float gravity_level[15] = {
@@ -64,7 +64,7 @@ static uint8_t const hidamari_shape_mlen[HIDAMARI_LAST] =
 };
 
 
-/* Initial orientation and structure of hidamaries */
+/* Initial orientation and structure of hidamaris */
 static uint8_t const hidamari_shape_init[HIDAMARI_LAST][4][4] = {
 	{
 		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE},
@@ -348,8 +348,9 @@ rotate_current(Playfield *field, char dir)
 }
 
 
+/* Draw the initial, static tiles of a playfield, like walls. */
 static void
-init_buffer(HidamariBuffer *buf) {
+draw_field_init(HidamariBuffer *buf) {
 	size_t i, j;
 
 	for (i = 0; i < HIDAMARI_BUFFER_WIDTH; ++i) {
@@ -372,7 +373,7 @@ init_buffer(HidamariBuffer *buf) {
 
 /* Update the game buffer */
 static void
-update_buffer(HidamariBuffer *buf, Playfield *field)
+draw_field_update(HidamariBuffer *buf, Playfield *field)
 {
 	int i, j;
 	int x, y;
@@ -442,8 +443,22 @@ update_buffer(HidamariBuffer *buf, Playfield *field)
 	}
 }
 
+static bool
+field_is_game_over(Playfield *field)
+{
+	size_t i;
+
+	/* Check for game over */
+	for (i = 1; i < HIDAMARI_WIDTH - 1; ++i) {
+		if (HIDAMARI_NONE != field->grid[i][HIDAMARI_HEIGHT_VISIBLE]) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static void
-init_field(HidamariBuffer *buf, Playfield *field)
+field_init(HidamariBuffer *buf, Playfield *field)
 {
 	int i;
 
@@ -465,14 +480,12 @@ init_field(HidamariBuffer *buf, Playfield *field)
 	      || HIDAMARI_Z == field->next[0]);
 	get_next_hidamari(field);
 	/* Set the initial game level */
-	init_buffer(buf);
+	draw_field_init(buf);
 }
 
 static void
-update_field(HidamariBuffer *buf, Playfield *field, Action act)
+field_update(HidamariBuffer *buf, Playfield *field, Action act)
 {
-	size_t i;
-
 	switch (act) {
 	case ACTION_NONE:
 		break;
@@ -505,40 +518,37 @@ update_field(HidamariBuffer *buf, Playfield *field, Action act)
 					field->current.y - 1,
 					&field->current,
 					field->grid)) {
-			if (field->slide_timer >= slide_time) {
+			if (field->slide_timer < slide_time) {
+				field->slide_timer += 1;
+			} else {
 				lock_current(field);
 				clear_lines(field);
 				get_next_hidamari(field);
 				field->slide_timer = 0;
-			} else {
-				field->slide_timer += 1;
+				if (field_is_game_over(field)) {
+					printf("lines: %zu\n", field->lines);
+					printf("score: %zu\n", field->score);
+					field_init(buf, field);
+				}
 			}
 		} else {
 			move_current(field, 'd');
-			field->gravity_timer = MAX(0.0, field->gravity_timer - drop_time);
-		}
-		/* Check for game over */
-		for (i = 1; i < HIDAMARI_WIDTH - 1; ++i) {
-			if (HIDAMARI_NONE != field->grid[i][HIDAMARI_HEIGHT_VISIBLE]) {
-				printf("lines: %zu\n", field->lines);
-				printf("score: %zu\n", field->score);
-				init_field(buf, field);
-				break;
-			}
+			field->gravity_timer = MAX(0.0, field->gravity_timer
+					- drop_time);
 		}
 	}
 	/* Update the buffer for rendering */
-	update_buffer(buf, field);
+	draw_field_update(buf, field);
 }
 
 void
 hidamari_init(HidamariBuffer *buf, HidamariGame *game)
 {
-	init_field(buf, &game->field);
+	field_init(buf, &game->field);
 }
 
 void
 hidamari_update(HidamariBuffer *buf, HidamariGame *game, Action act)
 {
-	update_field(buf, &game->field, act);
+	field_update(buf, &game->field, act);
 }
