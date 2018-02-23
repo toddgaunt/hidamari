@@ -129,7 +129,7 @@ shift_lines(Playfield *field, int y_start)
 	}
 }
 
-/* Clear any lines, and shift down hidamaries on the grid */
+/* Clear any lines, and shift down hidamaris on the grid */
 static void
 clear_lines(Playfield *field)
 {
@@ -151,6 +151,7 @@ clear_lines(Playfield *field)
 		}
 	}
 	field->lines += lines;
+
 	switch (lines) {
 	case 0:
 		break;
@@ -169,6 +170,27 @@ clear_lines(Playfield *field)
 	default:
 		field->score += 800;
 		break;
+	}
+
+	/* Temporary solution to leveling */
+	if (field->score <= 500) {
+		field->level = 0;
+	} else if (field->score <= 1500) {
+		field->level = 1;
+	} else if (field->score <= 3000) {
+		field->level = 2;
+	} else if (field->score <= 5000) {
+		field->level = 3;
+	} else if (field->score <= 7500) {
+		field->level = 4;
+	} else if (field->score <= 10500) {
+		field->level = 5;
+	} else if (field->score <= 14000) {
+		field->level = 6;
+	} else if (field->score <= 18000) {
+		field->level = 7;
+	} else {
+		field->level = 8;
 	}
 }
 
@@ -442,7 +464,7 @@ init_field(HidamariBuffer *buf, Playfield *field)
 	      || HIDAMARI_S == field->next[0]
 	      || HIDAMARI_Z == field->next[0]);
 	get_next_hidamari(field);
-	/* Set the initial game speed */
+	/* Set the initial game level */
 	init_buffer(buf);
 }
 
@@ -476,7 +498,7 @@ update_field(HidamariBuffer *buf, Playfield *field, Action act)
 		field->gravity_timer = drop_time;
 		break;
 	}
-	field->gravity_timer += gravity_level[field->level / 10];
+	field->gravity_timer += gravity_level[field->level];
 	/* If its not time for an update, then return early */
 	if (field->gravity_timer >= drop_time) {
 		if (is_collision(field->current.x,
