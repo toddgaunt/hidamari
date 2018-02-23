@@ -50,7 +50,7 @@ render(SDL_Renderer *renderer, SDL_Texture *tileset, HidamariBuffer *buf)
 int
 main()
 {
-	Playfield field;
+	HidamariGame game;
 	uint32_t acc, dt;
 	uint32_t last = SDL_GetTicks();
 	uint32_t now;
@@ -84,7 +84,7 @@ main()
 	SDL_Texture *tileset_hw = SDL_CreateTextureFromSurface(renderer, tileset_sf);
 
 	srand(time(NULL));
-	hidamari_init(&buf, &field);
+	hidamari_init(&buf, &game);
 	while(keypress) {
 		// Uncomment and change the number below to test lag!
 		//usleep(100000);
@@ -139,7 +139,7 @@ main()
 		}
 
 		while (acc >= dt) {
-			hidamari_update(&buf, &field, action);
+			hidamari_update(&buf, &game, action);
 			acc -= dt;
 			action = ACTION_NONE;
 		}

@@ -420,8 +420,8 @@ update_buffer(HidamariBuffer *buf, Playfield *field)
 	}
 }
 
-void
-hidamari_init(HidamariBuffer *buf, Playfield *field)
+static void
+init_field(HidamariBuffer *buf, Playfield *field)
 {
 	int i;
 
@@ -446,8 +446,8 @@ hidamari_init(HidamariBuffer *buf, Playfield *field)
 	init_buffer(buf);
 }
 
-void
-hidamari_update(HidamariBuffer *buf, Playfield *field, Action act)
+static void
+update_field(HidamariBuffer *buf, Playfield *field, Action act)
 {
 	size_t i;
 
@@ -500,11 +500,23 @@ hidamari_update(HidamariBuffer *buf, Playfield *field, Action act)
 			if (HIDAMARI_NONE != field->grid[i][HIDAMARI_HEIGHT_VISIBLE]) {
 				printf("lines: %zu\n", field->lines);
 				printf("score: %zu\n", field->score);
-				hidamari_init(buf, field);
+				init_field(buf, field);
 				break;
 			}
 		}
 	}
 	/* Update the buffer for rendering */
 	update_buffer(buf, field);
+}
+
+void
+hidamari_init(HidamariBuffer *buf, HidamariGame *game)
+{
+	init_field(buf, &game->field);
+}
+
+void
+hidamari_update(HidamariBuffer *buf, HidamariGame *game, Action act)
+{
+	update_field(buf, &game->field, act);
 }

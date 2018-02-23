@@ -38,6 +38,9 @@ typedef enum {
 	ACTION_HARD_DROP,
 } Action;
 
+struct HidamariGame;
+typedef struct HidamariGame HidamariGame;
+
 typedef struct {
 	uint16_t tile[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
 	uint8_t color[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT][3];
@@ -66,9 +69,13 @@ typedef struct {
 	uint16_t grid[HIDAMARI_WIDTH][HIDAMARI_HEIGHT];
 } Playfield;
 
+struct HidamariGame {
+	Playfield field;
+};
+
 /* Initialize the playfield. Can be called as many times as you want */
 void
-hidamari_init(HidamariBuffer *buf, Playfield *field);
+hidamari_init(HidamariBuffer *buf, HidamariGame *field);
 
 /* Update the playfield by one timestep, perform the player's action,
  * move the current piece downwards, clear any rows, and
@@ -76,4 +83,4 @@ hidamari_init(HidamariBuffer *buf, Playfield *field);
  * This is the main public function for running the game.
  */
 void
-hidamari_update(HidamariBuffer *buf, Playfield *field, Action act);
+hidamari_update(HidamariBuffer *buf, HidamariGame *field, Action act);
