@@ -6,12 +6,12 @@
 
 #define HIDAMARI_BUFFER_WIDTH HIDAMARI_WIDTH
 #define HIDAMARI_BUFFER_HEIGHT (HIDAMARI_HEIGHT_VISIBLE + 8)
-typedef uint16_t HidamariBuffer[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
 
 #define HIDAMARI_FLAG_MASK 15 << 8  /* 1111 0000 0000 */
 /* Hidamari flags are hints for the renderer */
 typedef enum {
-	HIDAMARI_TRANSPARENT = 1 << 8, /* 0001 0000 0000 */
+	HIDAMARI_TRANSPARENT = 1 << 8, /* 0000 0001 0000 0000 */
+	HIDAMARI_NEED_REDRAW = 1 << 9, /* 0000 0010 0000 0000 */
 } HidamariFlag;
 
 #define HIDAMARI_TILE_MASK 255  /* 1111 1111 */
@@ -38,12 +38,10 @@ typedef enum {
 	ACTION_HARD_DROP,
 } Action;
 
-typedef enum {
-	ROTATION_U = 0,
-	ROTATION_R,
-	ROTATION_D,
-	ROTATION_L,
-} Rotation;
+typedef struct {
+	uint16_t tile[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
+	uint8_t color[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT][3];
+} HidamariBuffer;
 
 typedef struct {
 	int x, y; /* Position of the matrix in space */
@@ -70,7 +68,7 @@ typedef struct {
 
 /* Initialize the playfield. Can be called as many times as you want */
 void
-hidamari_init(HidamariBuffer buf, Playfield *field);
+hidamari_init(HidamariBuffer *buf, Playfield *field);
 
 /* Update the playfield by one timestep, perform the player's action,
  * move the current piece downwards, clear any rows, and
@@ -78,4 +76,4 @@ hidamari_init(HidamariBuffer buf, Playfield *field);
  * This is the main public function for running the game.
  */
 void
-hidamari_update(HidamariBuffer buf, Playfield *field, Action act);
+hidamari_update(HidamariBuffer *buf, Playfield *field, Action act);

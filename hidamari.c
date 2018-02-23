@@ -327,30 +327,30 @@ rotate_current(Playfield *field, char dir)
 
 
 static void
-init_buffer(HidamariBuffer buf) {
+init_buffer(HidamariBuffer *buf) {
 	size_t i, j;
 
 	for (i = 0; i < HIDAMARI_BUFFER_WIDTH; ++i) {
 		for (j = 0; j < HIDAMARI_BUFFER_HEIGHT; ++j) {
-			buf[i][j] = HIDAMARI_NONE;
+			buf->tile[i][j] = HIDAMARI_NONE;
 		}
 	}
 
 	for (i = 0; i < HIDAMARI_WIDTH; ++i) {
-		buf[i][HIDAMARI_HEIGHT_VISIBLE] = HIDAMARI_WALL;
-		buf[i][HIDAMARI_HEIGHT_VISIBLE + 5] = HIDAMARI_WALL;
-		buf[i][HIDAMARI_HEIGHT_VISIBLE + 7] = HIDAMARI_WALL;
+		buf->tile[i][HIDAMARI_HEIGHT_VISIBLE] = HIDAMARI_WALL;
+		buf->tile[i][HIDAMARI_HEIGHT_VISIBLE + 5] = HIDAMARI_WALL;
+		buf->tile[i][HIDAMARI_HEIGHT_VISIBLE + 7] = HIDAMARI_WALL;
 	}
 	
 	for (i = 0; i < 8; ++i) {
-		buf[0][HIDAMARI_HEIGHT_VISIBLE + i] = HIDAMARI_WALL;
-		buf[HIDAMARI_WIDTH - 1][HIDAMARI_HEIGHT_VISIBLE + i] = HIDAMARI_WALL;
+		buf->tile[0][HIDAMARI_HEIGHT_VISIBLE + i] = HIDAMARI_WALL;
+		buf->tile[HIDAMARI_WIDTH - 1][HIDAMARI_HEIGHT_VISIBLE + i] = HIDAMARI_WALL;
 	}
 }
 
 /* Update the game buffer */
 static void
-update_buffer(HidamariBuffer buf, Playfield *field)
+update_buffer(HidamariBuffer *buf, Playfield *field)
 {
 	int i, j;
 	int x, y;
@@ -360,7 +360,7 @@ update_buffer(HidamariBuffer buf, Playfield *field)
 	/* Copy the static hidamaris */
 	for (i = 0; i < HIDAMARI_WIDTH; ++i) {
 		for (j = 0; j < HIDAMARI_HEIGHT_VISIBLE; ++j) {
-			buf[i][j] = field->grid[i][j];
+			buf->tile[i][j] = field->grid[i][j];
 		}
 	}
 
@@ -369,11 +369,11 @@ update_buffer(HidamariBuffer buf, Playfield *field)
 	for (i = 0; i < 4; ++i) {
 		for (j = 0; j < 4; ++j) {
 			if (i < mlen ||  j < mlen) {
-				buf[i + HIDAMARI_WIDTH / 2 - mlen / 2 - mlen % 2]
+				buf->tile[i + HIDAMARI_WIDTH / 2 - mlen / 2 - mlen % 2]
 					[j + HIDAMARI_HEIGHT_VISIBLE + 1]
 					= hidamari_shape_init[field->next[0]][i][j];
 			} else {
-				buf[i + HIDAMARI_WIDTH / 2 - mlen / 2 - mlen % 2]
+				buf->tile[i + HIDAMARI_WIDTH / 2 - mlen / 2 - mlen % 2]
 					[j + HIDAMARI_HEIGHT_VISIBLE + 1]
 					= HIDAMARI_NONE;
 			}
@@ -383,7 +383,7 @@ update_buffer(HidamariBuffer buf, Playfield *field)
 	/* Write the current score */
 	snprintf(score_buf, sizeof(score_buf), "%010zu", field->score);
 	for (i = sizeof(score_buf) - 1; i > 0; --i) {
-		buf[i][HIDAMARI_BUFFER_HEIGHT - 2] = score_buf[i - 1] - 34;
+		buf->tile[i][HIDAMARI_BUFFER_HEIGHT - 2] = score_buf[i - 1] - 34;
 	}
 
 	/* Insert the ghost piece */
@@ -397,7 +397,7 @@ update_buffer(HidamariBuffer buf, Playfield *field)
 		for (j = 0; j < mlen; ++j) {
 			if (HIDAMARI_NONE != field->current.matrix[i][j]
 			&& y + j - mlen / 2 < HIDAMARI_HEIGHT_VISIBLE) {
-				buf[x + i - mlen / 2]
+				buf->tile[x + i - mlen / 2]
 				   [y + j - mlen / 2]
 				   = field->current.matrix[i][j]
 					   | HIDAMARI_TRANSPARENT;
@@ -412,7 +412,7 @@ update_buffer(HidamariBuffer buf, Playfield *field)
 		for (j = 0; j < mlen; ++j) {
 			if (HIDAMARI_NONE != field->current.matrix[i][j]
 			&& y + j - mlen / 2 < HIDAMARI_HEIGHT_VISIBLE) {
-				buf[x + i - mlen / 2]
+				buf->tile[x + i - mlen / 2]
 					[y + j - mlen / 2]
 					= field->current.matrix[i][j];
 			}
@@ -421,7 +421,7 @@ update_buffer(HidamariBuffer buf, Playfield *field)
 }
 
 void
-hidamari_init(HidamariBuffer buf, Playfield *field)
+hidamari_init(HidamariBuffer *buf, Playfield *field)
 {
 	int i;
 
@@ -447,7 +447,7 @@ hidamari_init(HidamariBuffer buf, Playfield *field)
 }
 
 void
-hidamari_update(HidamariBuffer buf, Playfield *field, Action act)
+hidamari_update(HidamariBuffer *buf, Playfield *field, Action act)
 {
 	size_t i;
 

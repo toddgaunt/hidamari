@@ -13,7 +13,7 @@
 #define TILE_S 16
 
 static void
-render(SDL_Renderer *renderer, SDL_Texture *tileset, HidamariBuffer buf)
+render(SDL_Renderer *renderer, SDL_Texture *tileset, HidamariBuffer *buf)
 {
 	int i, j;
 	SDL_Rect src_r = {.h = TILE_S, .w = TILE_S, .x = 0, .y = 0};
@@ -25,8 +25,8 @@ render(SDL_Renderer *renderer, SDL_Texture *tileset, HidamariBuffer buf)
 	/* Render the static grid */
 	for (i = 0; i < HIDAMARI_BUFFER_WIDTH; ++i) {
 		for (j = 0; j < HIDAMARI_BUFFER_HEIGHT; ++j) {
-			tile = buf[HIDAMARI_BUFFER_WIDTH - 1 - i][HIDAMARI_BUFFER_HEIGHT - 1 -j] & HIDAMARI_TILE_MASK;
-			flag = buf[HIDAMARI_BUFFER_WIDTH - 1 - i][HIDAMARI_BUFFER_HEIGHT - 1 -j] & HIDAMARI_FLAG_MASK;
+			tile = buf->tile[HIDAMARI_BUFFER_WIDTH - 1 - i][HIDAMARI_BUFFER_HEIGHT - 1 -j] & HIDAMARI_TILE_MASK;
+			flag = buf->tile[HIDAMARI_BUFFER_WIDTH - 1 - i][HIDAMARI_BUFFER_HEIGHT - 1 -j] & HIDAMARI_FLAG_MASK;
 			if (HIDAMARI_NONE == tile)
 				continue;
 			dest_r.x = TILE_S * (HIDAMARI_BUFFER_WIDTH - 1 - i);
@@ -84,7 +84,7 @@ main()
 	SDL_Texture *tileset_hw = SDL_CreateTextureFromSurface(renderer, tileset_sf);
 
 	srand(time(NULL));
-	hidamari_init(buf, &field);
+	hidamari_init(&buf, &field);
 	while(keypress) {
 		// Uncomment and change the number below to test lag!
 		//usleep(100000);
@@ -139,12 +139,12 @@ main()
 		}
 
 		while (acc >= dt) {
-			hidamari_update(buf, &field, action);
+			hidamari_update(&buf, &field, action);
 			acc -= dt;
 			action = ACTION_NONE;
 		}
 
-		render(renderer, tileset_hw, buf);
+		render(renderer, tileset_hw, &buf);
 	}
 
 	SDL_DestroyWindow(screen);
