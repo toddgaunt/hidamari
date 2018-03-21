@@ -44,21 +44,21 @@ typedef enum {
 } HidamariShape;
 
 typedef struct {
-	u16 tile[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
+	char tile[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
 	uint8_t color[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT][3];
 } HidamariBuffer;
 
 typedef struct {
 	Vec2 pos; /* Bottom-left position */
-	HidamariShape shape;
-	u8 orientation;
+	HidamariShape shape : 4;
+	u8 orientation : 3;
 } Hidamari;
 
 struct HidamariPlayField {
 	/* Scoring */
 	u8 level;
 	u32 score; 
-	uint16_t lines; 
+	u16 lines; 
 	/* Timing */
 	f32 gravity_timer; 
 	u8 slide_timer;

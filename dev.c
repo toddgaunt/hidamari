@@ -21,6 +21,7 @@ main()
 	game.field.grid[0] |= 7 << 1;
 	while(1) {
 		usleep(100000);
+		printf("Size of playfield: %zu\n", sizeof(HidamariPlayField));
 		hidamari_update(&buf, &game, BUTTON_NONE);
 	}
 }

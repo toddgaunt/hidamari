@@ -237,6 +237,8 @@ field_update(HidamariBuffer *buf, HidamariPlayField *field, Button act)
 		/* Don't perform any action for an illegal action */
 		break;
 	}
+	move_current(field, BUTTON_DOWN);
+	rotate_current(field, BUTTON_R);
 	dump_field(field);
 }
 
