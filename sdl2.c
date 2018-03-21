@@ -12,41 +12,6 @@
 
 #define TILE_S 16
 
-static void
-render(SDL_Renderer *renderer, SDL_Texture *tileset, HidamariBuffer *buf)
-{
-	int i, j;
-	SDL_Rect src_r = {.h = TILE_S, .w = TILE_S, .x = 0, .y = 0};
-	SDL_Rect dest_r = {.h = TILE_S, .w = TILE_S, .x = 0, .y = 0};
-	HidamariShape tile;
-	HidamariFlag flag;
-
-	SDL_RenderClear(renderer);
-	/* Render the static grid */
-	for (i = 0; i < HIDAMARI_BUFFER_WIDTH; ++i) {
-		for (j = 0; j < HIDAMARI_BUFFER_HEIGHT; ++j) {
-			tile = buf->tile[HIDAMARI_BUFFER_WIDTH - 1 - i][HIDAMARI_BUFFER_HEIGHT - 1 -j] & HIDAMARI_TILE_MASK;
-			flag = buf->tile[HIDAMARI_BUFFER_WIDTH - 1 - i][HIDAMARI_BUFFER_HEIGHT - 1 -j] & HIDAMARI_FLAG_MASK;
-			if (HIDAMARI_NONE == tile)
-				continue;
-			dest_r.x = TILE_S * (HIDAMARI_BUFFER_WIDTH - 1 - i);
-			dest_r.y = TILE_S * j;
-			if (HIDAMARI_TRANSPARENT == (flag & HIDAMARI_TRANSPARENT)) {
-				SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-			 	SDL_RenderFillRect(renderer, &dest_r);
-			} else {
-				src_r.x = TILE_S * (tile % 14);
-				src_r.y = TILE_S * (tile / 14);
-				SDL_RenderCopy(renderer, tileset, &src_r, &dest_r);
-			}
-		}
-	}
-
-	/* Background color */
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderPresent(renderer); 
-}
-
 int
 main()
 {
@@ -60,7 +25,7 @@ main()
 	dt = 1000 / 60; /* miliseconds / frames */
 	acc = 0.0;
 	bool keypress = true;
-	Action action = ACTION_NONE;
+	Button button = BUTTON_NONE;
 	HidamariBuffer buf;
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -85,6 +50,7 @@ main()
 
 	srand(time(NULL));
 	hidamari_init(&buf, &game);
+	game.field.grid[0] |= 7 << 20;
 	while(keypress) {
 		// Uncomment and change the number below to test lag!
 		//usleep(100000);
@@ -102,36 +68,36 @@ main()
 				case SDLK_s:
 				case SDLK_k:
 				case SDLK_DOWN:
-					action = ACTION_MV_D;
+					button = BUTTON_DOWN;
 					break;
 				case SDLK_d:
 				case SDLK_l:
 				case SDLK_RIGHT:
-					action = ACTION_MV_R;
+					button = BUTTON_RIGHT;
 					break;
 				case SDLK_a:
 				case SDLK_j:
 				case SDLK_LEFT:
-					action = ACTION_MV_L;
+					button = BUTTON_LEFT;
 					break;
 				case SDLK_e:
 				case SDLK_o:
 				case SDLK_UP:
 				case SDLK_x:
-					action = ACTION_ROT_R;
+					button = BUTTON_R;
 					break;
 				case SDLK_q:
 				case SDLK_u:
 				case SDLK_RCTRL:
 				case SDLK_LCTRL:
-					action = ACTION_ROT_L;
+					button = BUTTON_L;
 					break;
 				case SDLK_RETURN:
 				case SDLK_SPACE:
-					action = ACTION_HARD_DROP;
+					button = BUTTON_X;
 					break;
 				default:
-					action = ACTION_NONE;
+					button = BUTTON_NONE;
 					break;
 				}
 				break;
@@ -139,12 +105,12 @@ main()
 		}
 
 		while (acc >= dt) {
-			hidamari_update(&buf, &game, action);
+			hidamari_update(&buf, &game, button);
 			acc -= dt;
-			action = ACTION_NONE;
+			button = BUTTON_NONE;
 		}
 
-		render(renderer, tileset_hw, &buf);
+		//render(renderer, tileset_hw, &buf);
 	}
 
 	SDL_DestroyWindow(screen);

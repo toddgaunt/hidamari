@@ -11,7 +11,7 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 typedef float f32;
 
-#define VEC2(x, y) (Vec2){.raw = {(x), (y)}}
+#define VEC2(x, y) {.raw = {(x), (y)}}
 
 typedef struct {
 	union {

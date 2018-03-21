@@ -49,7 +49,7 @@ typedef struct {
 } HidamariBuffer;
 
 typedef struct {
-	Vec2 pos; /* Top-left position */
+	Vec2 pos; /* Bottom-left position */
 	HidamariShape shape;
 	u8 orientation;
 } Hidamari;
@@ -68,15 +68,20 @@ struct HidamariPlayField {
 	/* Hidamaries */
 	HidamariShape next : 4; /* Lookahead piece for player */
 	Hidamari current;
-	u10 grid_static[HIDAMARI_HEIGHT]; /* Represents static Hidamaries */
+	u10 grid[HIDAMARI_HEIGHT + 2]; /* Represents static Hidamaries */
 };
 
 typedef struct {
 	HidamariPlayField field;
 } HidamariGame;
 
-static Vec2 hidamari_orientation[HIDAMARI_LAST][4][4] = {
+static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 	{ /* 'I' */
+		/* - - - -
+		   I I I I 
+		   - - - - 
+		   - - - - */
+		{VEC2(0, 1), VEC2(1, 1), VEC2(2, 1), VEC2(3, 1)},
 		/* - - I -
 		   - - I - 
 		   - - I - 
@@ -92,47 +97,106 @@ static Vec2 hidamari_orientation[HIDAMARI_LAST][4][4] = {
 		   - I - - 
 		   - I - - */
 		{VEC2(1, 0), VEC2(1, 1), VEC2(1, 2), VEC2(1, 3)},
-		/* - - - -
-		   I I I I 
-		   - - - - 
-		   - - - - */
-		{VEC2(0, 1), VEC2(1, 1), VEC2(2, 1), VEC2(3, 1)},
 	}, 
 	{ /* 'J' */
-		/* - - J
-		   - - J
-		   - J J */
-		{VEC2(1, 0), VEC2(2, 0), VEC2(2, 1), VEC2(2, 2)},
+		/* J - - 
+		   J J J 
+		   - - -*/
+		{VEC2(0, 1), VEC2(0, 2), VEC2(1, 1), VEC2(2, 1)},
+		/* - J J 
+		   - J -
+		   - J -*/
+		{VEC2(1, 0), VEC2(1, 1), VEC2(1, 2), VEC2(2, 2)},
 		/* - - - 
-		   J - -
-		   J J J */
-		{VEC2(0, 0), VEC2(0, 1), VEC2(1, 0), VEC2(2, 0)},
-		/* J J - 
-		   J - -
-		   J - -*/
-		{VEC2(0, 0), VEC2(0, 1), VEC2(0, 2), VEC2(1, 2)},
-		/* J J J 
-		   - - J 
-		   - - - */
-		{VEC2(0, 2), VEC2(1, 2), VEC2(2, 1), VEC2(2, 2)},
+		   J J J 
+		   - - J */
+		{VEC2(0, 1), VEC2(1, 1), VEC2(2, 0), VEC2(2, 1)},
+		/* - J - 
+		   - J - 
+		   J J - */
+		{VEC2(0, 0), VEC2(1, 0), VEC2(1, 1), VEC2(1, 2)},
 	},
 	{ /* 'L' */
-		/* L - - 
-		   L - - 
-		   L L - */
-		{VEC2(0, 0), VEC2(0, 1), VEC2(0, 2), VEC2(2, 2)},
-		/* - - - 
-		   - - L 
-		   L L L */
-		{VEC2(0, 0), VEC2(0, 1), VEC2(1, 0), VEC2(2, 0)},
-		/* - L L 
-		   - - L 
-		   - - L*/
-		{VEC2(0, 0), VEC2(0, 1), VEC2(0, 2), VEC2(1, 2)},
-		/* L L L
-		   L - - 
+		/* - - L 
+		   L L L 
 		   - - - */
-		{VEC2(0, 2), VEC2(1, 2), VEC2(2, 1), VEC2(2, 2)},
+		{VEC2(0, 1), VEC2(1, 1), VEC2(2, 1), VEC2(2, 2)},
+		/* - L - 
+		   - L - 
+		   - L L*/
+		{VEC2(1, 2), VEC2(2, 0), VEC2(2, 1), VEC2(2, 2)},
+		/* - - -
+		   L L L
+		   L - - */
+		{VEC2(0, 1), VEC2(0, 2), VEC2(1, 2), VEC2(2, 2)},
+		/* L L - 
+		   - L - 
+		   - L - */
+		{VEC2(0, 2), VEC2(1, 0), VEC2(1, 1), VEC2(1, 2)},
+	},
+	{ /* 'O' */
+		/* - - - -
+		   - O O - 
+		   - O O - 
+		   - - - - */
+		{VEC2(1, 1), VEC2(1, 2), VEC2(2, 1), VEC2(2, 2)},
+		{VEC2(1, 1), VEC2(1, 2), VEC2(2, 1), VEC2(2, 2)},
+		{VEC2(1, 1), VEC2(1, 2), VEC2(2, 1), VEC2(2, 2)},
+		{VEC2(1, 1), VEC2(1, 2), VEC2(2, 1), VEC2(2, 2)},
+	}, 
+	{ /* 'S' */
+		/* - S S 
+		   S S - 
+		   - - - */
+		{VEC2(0, 1), VEC2(1, 1), VEC2(1, 2), VEC2(2, 2)},
+		/* - S - 
+		   - S S 
+		   - - S*/
+		{VEC2(1, 1), VEC2(1, 2), VEC2(2, 0), VEC2(2, 1)},
+		/* - - -
+		   - S S 
+		   S S - */
+		{VEC2(0, 0), VEC2(1, 0), VEC2(1, 1), VEC2(2, 1)},
+		/* S - - 
+		   S S - 
+		   - S - */
+		{VEC2(0, 1), VEC2(0, 2), VEC2(1, 0), VEC2(1, 1)},
+	},
+	{ /* 'T' */
+		/* - T - 
+		   T T T 
+		   - - - */
+		{VEC2(0, 1), VEC2(1, 1), VEC2(1, 2), VEC2(2, 1)},
+		/* - T - 
+		   - T T 
+		   - T -*/
+		{VEC2(1, 0), VEC2(1, 1), VEC2(1, 2), VEC2(2, 1)},
+		/* - - -
+		   T T T 
+		   - T - */
+		{VEC2(0, 1), VEC2(1, 0), VEC2(1, 1), VEC2(2, 1)},
+		/* - T - 
+		   T T - 
+		   - T - */
+		{VEC2(0, 1), VEC2(1, 0), VEC2(1, 1), VEC2(1, 2)},
+	},
+	{ /* 'Z' */
+		/* Z Z - 
+		   - Z Z 
+		   - - - */
+		{VEC2(0, 2), VEC2(1, 1), VEC2(1, 2), VEC2(2, 1)},
+		/* - - Z 
+		   - Z Z 
+		   - Z -*/
+		{VEC2(1, 0), VEC2(1, 1), VEC2(2, 1), VEC2(2, 2)},
+		/* - - -
+		   Z Z - 
+		   - Z Z*/
+		{VEC2(0, 1), VEC2(1, 0), VEC2(1, 1), VEC2(2, 0)},
+		/* - Z - 
+		   Z Z - 
+		   Z - - */
+		{VEC2(0, 0), VEC2(0, 1), VEC2(1, 1), VEC2(1, 2)},
 	},
 };
 
@@ -150,6 +214,6 @@ hidamari_init(HidamariBuffer *buf, HidamariGame *field);
  * This is the only function needed to run the game after initialization.
  */
 void
-hidamari_update(HidamariBuffer *buf, HidamariGame *field, HidamariButton act);
+hidamari_update(HidamariBuffer *buf, HidamariGame *field, Button act);
 
 #endif
