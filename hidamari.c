@@ -38,7 +38,6 @@ static float gravity_level[15] = {
 /* Character representations of each hidamari */
 static char const hidamari_shape_char[HIDAMARI_LAST] =
 {
-	' ',
 	'I',
 	'J',
 	'L',
@@ -46,13 +45,11 @@ static char const hidamari_shape_char[HIDAMARI_LAST] =
 	'S',
 	'T',
 	'Z',
-	'#',
 };
 
 /* Matrix size of each hidamari */
 static uint8_t const hidamari_shape_mlen[HIDAMARI_LAST] =
 {
-	0,
 	4,
 	3,
 	3,
@@ -60,61 +57,8 @@ static uint8_t const hidamari_shape_mlen[HIDAMARI_LAST] =
 	3,
 	3,
 	3,
-	0, /* Walls should never be falling */
 };
 
-
-/* Initial orientation and structure of hidamaris */
-static uint8_t const hidamari_shape_init[HIDAMARI_LAST][4][4] = {
-	{
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE},
-	},
-	{
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_I, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_I, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_I, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_I, HIDAMARI_NONE},
-	},
-	{
-		{HIDAMARI_NONE, HIDAMARI_J, HIDAMARI_J, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_J, HIDAMARI_NONE, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_J, HIDAMARI_NONE, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE},
-	},
-	{
-		{HIDAMARI_NONE, HIDAMARI_L, HIDAMARI_NONE, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_L, HIDAMARI_NONE, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_L, HIDAMARI_L, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE},
-	},
-	{
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_O, HIDAMARI_O, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_O, HIDAMARI_O, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE},
-	},
-	{
-		{HIDAMARI_NONE, HIDAMARI_S, HIDAMARI_NONE, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_S, HIDAMARI_S, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_S, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE},
-	},
-	{
-		{HIDAMARI_NONE, HIDAMARI_T, HIDAMARI_NONE, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_T, HIDAMARI_T, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_T, HIDAMARI_NONE, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE},
-	},
-	{
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_Z, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_Z, HIDAMARI_Z, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_Z, HIDAMARI_NONE, HIDAMARI_NONE},
-		{HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE, HIDAMARI_NONE},
-	},
-};
 
 /* Shift all lines above a certain y value down by one */
 static void
@@ -251,16 +195,22 @@ lock_current(Playfield *field)
 
 /* Move the current piece in the given direction */
 static bool
-move_current(Playfield *field, char dir)
+move_current(HidamariPlayField *field, HidamariButton dir)
 {
-	assert('d' == dir || 'r' == dir || 'l' == dir);
+	assert(HIDAMARI_BUTTON_DOWN == dir
+	    || HIDAMARI_BUTTON_RIGHT == dir
+	    || HIDAMARI_BUTTON_LEFT == dir);
 
 	int x, y;
 
+	field->grid_active
 	x = field->current.x;
 	y = field->current.y;
 	switch (dir) {
-	case 'd': y -= 1; break;
+	case 'd':
+		field->current.p1.y -= 1;
+		field->current.p2.y -= 1;
+		break;
 	case 'r': x += 1; break;
 	case 'l': x -= 1; break;
 	}
@@ -458,57 +408,45 @@ field_is_game_over(Playfield *field)
 }
 
 static void
-field_init(HidamariBuffer *buf, Playfield *field)
+field_init(HidamariBuffer *buf, HidamariPlayfield *field)
 {
 	int i;
 
 	memset(field, 0, sizeof(*field));
-	/* Set the borders */
-	for (i = 0; i < HIDAMARI_HEIGHT; ++i) {
-		field->grid[0][i] = HIDAMARI_WALL;
-		field->grid[HIDAMARI_WIDTH - 1][i] = HIDAMARI_WALL;
-	}
-	for (i = 1; i < HIDAMARI_WIDTH - 1; ++i) {
-		field->grid[i][0] = HIDAMARI_WALL;
-	}
+	/* Initialize the random bag */
 	r7system(field->bag);
-	/* First hidamari must not be a s or z */
+	/* First hidamari must not be a S, Z, or O */
 	do {
 		field->next[0] = 1 + rand() % 7;
 	} while (HIDAMARI_O == field->next[0]
 	      || HIDAMARI_S == field->next[0]
 	      || HIDAMARI_Z == field->next[0]);
 	get_next_hidamari(field);
-	/* Set the initial game level */
-	draw_field_init(buf);
 }
 
 static void
-field_update(HidamariBuffer *buf, Playfield *field, Action act)
+field_update(HidamariBuffer *buf, Playfield *field, Button act)
 {
 	switch (act) {
-	case ACTION_NONE:
+	case HIDAMARI_BUTTON_NONE:
 		break;
-	case ACTION_MV_D:
-		move_current(field, 'd');
+	case HIDAMARI_BUTTON_DOWN:
+	case HIDAMARI_BUTTON_RIGHT:
+	case HIDAMARI_BUTTON_LEFT:
+		move_current(field, act);
 		break;
-	case ACTION_MV_R:
-		move_current(field, 'r');
+	case HIDAMARI_BUTTON_R:
+	case HIDAMARI_BUTTON_L:
+		rotate_current(field, act);
 		break;
-	case ACTION_MV_L:
-		move_current(field, 'l');
-		break;
-	case ACTION_ROT_R:
-		rotate_current(field, 'r');
-		break;
-	case ACTION_ROT_L:
-		rotate_current(field, 'l');
-		break;
-	case ACTION_HARD_DROP:
-		while (move_current(field, 'd'))
+	case HIDAMARI_BUTTON_B:
+		while (move_current(field, HIDAMARI_BUTTON_B))
 			;
 		field->slide_timer = slide_time;
 		field->gravity_timer = drop_time;
+		break;
+	default:
+		/* Don't perform any action for an illegal action */
 		break;
 	}
 	field->gravity_timer += gravity_level[field->level];
@@ -548,7 +486,7 @@ hidamari_init(HidamariBuffer *buf, HidamariGame *game)
 }
 
 void
-hidamari_update(HidamariBuffer *buf, HidamariGame *game, Action act)
+hidamari_update(HidamariBuffer *buf, HidamariGame *game, HidamariButton act)
 {
 	field_update(buf, &game->field, act);
 }

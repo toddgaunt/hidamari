@@ -1,86 +1,155 @@
 /* See LICENSE file for copyright and license details */
-#define HIDAMARI_WIDTH 12
-#define HIDAMARI_HEIGHT 22 
-#define HIDAMARI_HEIGHT_VISIBLE (HIDAMARI_HEIGHT - 2)
-#define HIDAMARI_HEIGHT_INVISIBLE (HIDAMARI_HEIGHT - HIDAMARI_HEIGHT_VISIBLE)
+#ifndef HIDAMARI_H
+#define HIDAMARI_H
 
-#define HIDAMARI_BUFFER_WIDTH HIDAMARI_WIDTH
-#define HIDAMARI_BUFFER_HEIGHT (HIDAMARI_HEIGHT_VISIBLE + 8)
+#include <stdint.h>
 
-#define HIDAMARI_FLAG_MASK 15 << 8  /* 1111 0000 0000 */
-/* Hidamari flags are hints for the renderer */
+#include "type.h"
+
+#define HIDAMARI_HEIGHT 20
+#define HIDAMARI_WIDTH 10
+
+#define HIDAMARI_BUFFER_HEIGHT HIDAMARI_HEIGHT + 10
+#define HIDAMARI_BUFFER_WIDTH HIDAMARI_WIDTH + 2
+
+typedef struct HidamariPlayField HidamariPlayField;
+
 typedef enum {
-	HIDAMARI_TRANSPARENT = 1 << 8, /* 0000 0001 0000 0000 */
-	HIDAMARI_NEED_REDRAW = 1 << 9, /* 0000 0010 0000 0000 */
-} HidamariFlag;
+	BUTTON_NONE = 0,
+	/* D-pad */
+	BUTTON_UP,
+	BUTTON_DOWN,
+	BUTTON_RIGHT,
+	BUTTON_LEFT,
+	/* Shoulder buttons */
+	BUTTON_R,
+	BUTTON_L,
+	/* Face buttons */
+	BUTTON_A,
+	BUTTON_B,
+	BUTTON_X,
+	BUTTON_Y,
+	BUTTON_LAST, /* Not an actual action, just used for enum length */
+} Button;
 
-#define HIDAMARI_TILE_MASK 255  /* 1111 1111 */
 typedef enum {
-	HIDAMARI_NONE = 0, /* 0000 0000 */
-	HIDAMARI_I,        /* 0000 0001 */
-	HIDAMARI_J,        /* 0000 0010 */
-	HIDAMARI_L,        /* 0000 0011 */
-	HIDAMARI_O,        /* 0000 0100 */
-	HIDAMARI_S,        /* 0000 0101 */
-	HIDAMARI_T,        /* 0000 0110 */
-	HIDAMARI_Z,        /* 0000 0111 */
-	HIDAMARI_WALL,     /* 0000 1000 */
+	HIDAMARI_I,        
+	HIDAMARI_J,        
+	HIDAMARI_L,        
+	HIDAMARI_O,        
+	HIDAMARI_S,        
+	HIDAMARI_T,        
+	HIDAMARI_Z,        
 	HIDAMARI_LAST, /* Not an actual piece, just used for enum length */
 } HidamariShape;
 
-typedef enum {
-	ACTION_NONE = 0,
-	ACTION_MV_D,
-	ACTION_MV_R,
-	ACTION_MV_L,
-	ACTION_ROT_R,
-	ACTION_ROT_L,
-	ACTION_HARD_DROP,
-} Action;
-
-struct HidamariGame;
-typedef struct HidamariGame HidamariGame;
-
 typedef struct {
-	uint16_t tile[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
+	u16 tile[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
 	uint8_t color[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT][3];
 } HidamariBuffer;
 
 typedef struct {
-	int x, y; /* Position of the matrix in space */
-	uint8_t mlen; /* Length of each side of the matrix */
-	uint8_t matrix[4][4]; /* Matrix of current hidamari */
+	Vec2 pos; /* Top-left position */
+	HidamariShape shape;
+	u8 orientation;
 } Hidamari;
 
-typedef struct {
+struct HidamariPlayField {
 	/* Scoring */
-	size_t level;
-	size_t score;
-	size_t lines;
+	u8 level;
+	u32 score; 
+	uint16_t lines; 
 	/* Timing */
-	float gravity_timer;
-	uint8_t slide_timer; /* Counts ticks for hidamari sliding */
-	uint8_t bag_pos; /* Current position in the bag */
-	HidamariShape bag[7]; /* Current random bag, used for generating next pieces */
-	HidamariShape next[1]; /* Lookahead piece for player */
-	Hidamari current; /* Current piece information */
-	/* The grid uses a mailbox representation, with the outer edges being
-	 * permanently frozen wall pieces */
-	uint16_t grid[HIDAMARI_WIDTH][HIDAMARI_HEIGHT];
-} Playfield;
-
-struct HidamariGame {
-	Playfield field;
+	f32 gravity_timer; 
+	u8 slide_timer;
+	/* Randomization */
+	u4 bag_pos : 4; /* Current position in the bag */
+	HidamariShape bag[7]; /* Random Bag, used for pseudo-random order */
+	/* Hidamaries */
+	HidamariShape next : 4; /* Lookahead piece for player */
+	Hidamari current;
+	u10 grid_static[HIDAMARI_HEIGHT]; /* Represents static Hidamaries */
 };
 
-/* Initialize the playfield. Can be called as many times as you want */
+typedef struct {
+	HidamariPlayField field;
+} HidamariGame;
+
+static Vec2 hidamari_orientation[HIDAMARI_LAST][4][4] = {
+	{ /* 'I' */
+		/* - - I -
+		   - - I - 
+		   - - I - 
+		   - - I - */
+		{VEC2(2, 0), VEC2(2, 1), VEC2(2, 2), VEC2(2, 3)},
+		/* - - - -
+		   - - - - 
+		   I I I I 
+		   - - - - */
+		{VEC2(0, 2), VEC2(1, 2), VEC2(2, 2), VEC2(3, 2)},
+		/* - I - -
+		   - I - - 
+		   - I - - 
+		   - I - - */
+		{VEC2(1, 0), VEC2(1, 1), VEC2(1, 2), VEC2(1, 3)},
+		/* - - - -
+		   I I I I 
+		   - - - - 
+		   - - - - */
+		{VEC2(0, 1), VEC2(1, 1), VEC2(2, 1), VEC2(3, 1)},
+	}, 
+	{ /* 'J' */
+		/* - - J
+		   - - J
+		   - J J */
+		{VEC2(1, 0), VEC2(2, 0), VEC2(2, 1), VEC2(2, 2)},
+		/* - - - 
+		   J - -
+		   J J J */
+		{VEC2(0, 0), VEC2(0, 1), VEC2(1, 0), VEC2(2, 0)},
+		/* J J - 
+		   J - -
+		   J - -*/
+		{VEC2(0, 0), VEC2(0, 1), VEC2(0, 2), VEC2(1, 2)},
+		/* J J J 
+		   - - J 
+		   - - - */
+		{VEC2(0, 2), VEC2(1, 2), VEC2(2, 1), VEC2(2, 2)},
+	},
+	{ /* 'L' */
+		/* L - - 
+		   L - - 
+		   L L - */
+		{VEC2(0, 0), VEC2(0, 1), VEC2(0, 2), VEC2(2, 2)},
+		/* - - - 
+		   - - L 
+		   L L L */
+		{VEC2(0, 0), VEC2(0, 1), VEC2(1, 0), VEC2(2, 0)},
+		/* - L L 
+		   - - L 
+		   - - L*/
+		{VEC2(0, 0), VEC2(0, 1), VEC2(0, 2), VEC2(1, 2)},
+		/* L L L
+		   L - - 
+		   - - - */
+		{VEC2(0, 2), VEC2(1, 2), VEC2(2, 1), VEC2(2, 2)},
+	},
+};
+
+/* Initialize the playfield. Is pseudo-idempotent, the randomized portions
+ * are always different. */
 void
 hidamari_init(HidamariBuffer *buf, HidamariGame *field);
 
-/* Update the playfield by one timestep, perform the player's action,
- * move the current piece downwards, clear any rows, and
- * add score to the counter.
- * This is the main public function for running the game.
+/* Update the playfield by one timestep:
+ *	Perform the player action;
+ *	Move current piece downwards;
+ *	Clear any rows;
+ *	Update the score.
+ *
+ * This is the only function needed to run the game after initialization.
  */
 void
-hidamari_update(HidamariBuffer *buf, HidamariGame *field, Action act);
+hidamari_update(HidamariBuffer *buf, HidamariGame *field, HidamariButton act);
+
+#endif
