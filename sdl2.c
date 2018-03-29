@@ -50,7 +50,6 @@ main()
 
 	srand(time(NULL));
 	hidamari_init(&buf, &game);
-	game.field.grid[0] |= 7 << 20;
 	while(keypress) {
 		// Uncomment and change the number below to test lag!
 		//usleep(100000);

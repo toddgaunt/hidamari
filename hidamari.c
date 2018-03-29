@@ -200,6 +200,7 @@ rotate_current(HidamariPlayField *field, Button dir)
 static void
 field_init(HidamariBuffer *buf, HidamariPlayField *field)
 {
+	size_t i;
 	memset(field, 0, sizeof(*field));
 	/* Initialize the random bag */
 	r7system(field->bag);
@@ -210,6 +211,11 @@ field_init(HidamariBuffer *buf, HidamariPlayField *field)
 	      || HIDAMARI_S == field->next
 	      || HIDAMARI_Z == field->next);
 	get_next_hidamari(field);
+	/* Initialize the borders */
+	field->grid[0] |= 4095;
+	for (i = 1; i < HIDAMARI_HEIGHT; ++i) {
+		field->grid[i] |= 2049;
+	}
 }
 
 static void
@@ -237,8 +243,10 @@ field_update(HidamariBuffer *buf, HidamariPlayField *field, Button act)
 		/* Don't perform any action for an illegal action */
 		break;
 	}
-	move_current(field, BUTTON_DOWN);
-	rotate_current(field, BUTTON_R);
+	if (!move_current(field, BUTTON_DOWN)) {
+		lock_current(field);
+		get_next_hidamari(field);
+	}
 	dump_field(field);
 }
 
