@@ -9,6 +9,7 @@
 #include "hidamari.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 static f32 const drop_time = 1.0;
 static u8 const slide_time = 15;
@@ -74,16 +75,30 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 	}
 }
 
+/* Shift all lines above a certain y value down by one */
 static void
-clear_lines(HidamariPlayField *field)
+shift_lines(HidamariPlayField *field, size_t y_start)
 {
 	size_t y;
 
-	/* for (y = 1; y < HIDAMARI_HEIGHT; ++y) { */
-	/* 	if (2046 == (field->grid[y] & 2046)) { */
-	/* 		field->grid[y] = 2049; */
-	/* 	} */
-	/* } */
+	for (y = y_start; y < HIDAMARI_HEIGHT - 1; ++y) {
+		field->grid[y] = field->grid[y + 1];
+	}
+}
+
+static void
+clear_lines(HidamariPlayField *field)
+{
+	size_t y = 1;
+
+	while (y < HIDAMARI_HEIGHT) {
+		if (2046 == (field->grid[y] & 2046)) {
+			field->grid[y] = 2049;
+			shift_lines(field, y);
+		} else {
+			++y;
+		}
+	}
 }
 
 static bool
@@ -203,11 +218,7 @@ rotate_current(HidamariPlayField *field, Button dir)
 	if (BUTTON_R == dir) {
 		tmp.orientation = (tmp.orientation + 1) % 4;
 	} else {
-		if (0 == tmp.orientation) {
-			tmp.orientation = 3;
-		} else {
-			tmp.orientation -= 1;
-		}
+		tmp.orientation = MIN((u8)(tmp.orientation - 1), 3);
 	}
 	if (!is_collision(&tmp, field->grid))
 		field->current = tmp;
@@ -270,7 +281,7 @@ field_update(HidamariBuffer *buf, HidamariPlayField *field, Button act)
 				field->slide_timer += 1;
 			} else {
 				lock_current(field);
-				//clear_lines(field);
+				clear_lines(field);
 				get_next_hidamari(field);
 				field->slide_timer = 0;
 				if (is_game_over(field)) {
