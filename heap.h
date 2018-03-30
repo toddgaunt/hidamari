@@ -9,20 +9,6 @@
 #define HEAP_RIGHT(i) (2 * (i) + 2)
 #define HEAP_PARENT(i) (((i) - 1) / 2)
 
-static inline size_t
-heap_npow2(size_t n)
-{
-	size_t next = 1;
-
-	if (n >= SIZE_MAX / 2) {
-		next = SIZE_MAX;
-	} else {
-		while (next < n)
-			next <<= 1;
-	}
-	return next;
-}
-
 #define HEAP_INSTANTIATE(NAME, T, ALLOC, CMP) \
 typedef struct NAME NAME; \
 struct NAME { \
