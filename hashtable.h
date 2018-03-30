@@ -9,6 +9,42 @@
 #define HT_NONE 0
 #define HT_TOMB -1 /* Used to denote deleted elements */
 
+/* Instantiate a generic hashtable. The hashtable type name will be *NAME*,
+ * with keys being of type *K*, and values being of type *V*. The allocator
+ * for the hashtable will be *ALLOC*, which must match the type signature of
+ * malloc. The hash function and comparison function used will be *HASH*
+ * and *CMP* respectively
+ *
+ * e.g.
+ *	static inline size_t
+ *	hash(char const *str)
+ *	{
+ *		size_t const p = 16777619;
+ *		size_t hash = 2166136261u;
+ *
+ *		for (; *str; ++str)
+ *			hash = (hash ^ *str) * p;
+ *		hash += hash << 13;
+ *		hash ^= hash >> 7;
+ *		hash += hash << 3;
+ *		hash ^= hash >> 17;
+ *		hash += hash << 5;
+ *		return hash;
+ *	}
+ *
+ *	HASHTABLE_INSTANTIATE(hts, char const *, bool, hash, strcmp)
+ *
+ *	int
+ *	main()
+ *	{
+ *		hts *table;
+ *
+ *		table = hts_create(32);
+ *		*hts_get(table, "hello") = true;
+ *		hts_delete(table, "hello");
+ *		printf("used: %zu, tombed: %zu\n", table->used, table->tombed);
+ *	}
+ * */
 #define HASHTABLE_INSTANTIATE(NAME, K, V, ALLOC, HASH, CMP) \
 typedef struct NAME NAME; \
 struct NAME { \
@@ -78,7 +114,6 @@ NAME ## _get(NAME *table, K key) \
 { \
 	size_t index = NAME ## _index(table, key); \
 	\
-	printf("foo %zu\n", index); \
 	if (index >= table->size) \
 		return NULL; \
 	if (HT_USED != table->state[index]) { \
@@ -109,7 +144,6 @@ NAME ## _delete(NAME *table, K key) \
 	if (index >= table->size \
 	|| HT_USED != table->state[index]) \
 		return; \
-	printf("bar %zu\n", index); \
 	table->state[index] = HT_TOMB; \
 	table->tombed += 1; \
 } \
