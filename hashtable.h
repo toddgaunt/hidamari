@@ -5,12 +5,14 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define HT_TOMB ((void *)-1) /* Used to denote deleted elements */
+#define HT_USED 1
+#define HT_NONE 0
+#define HT_TOMB -1 /* Used to denote deleted elements */
 
-/* NOTE: K and V must be pointer types, or unexpected behavior may occur */
 #define HASHTABLE_INSTANTIATE(NAME, K, V, ALLOC, HASH, CMP) \
 typedef struct NAME NAME; \
 struct NAME { \
+	int8_t *state; \
 	K *key; \
 	V *val; \
 	size_t used; \
@@ -26,8 +28,8 @@ NAME ## _index(NAME const *table, K key) \
 	if (table->used == table->size) \
 		return table->size; \
 	i = HASH(key) % table->size; \
-	while (NULL != table->key[i] && HT_TOMB != table->key[i]) { \
-		if (!CMP(table->key[i], key)) \
+	while (HT_NONE != table->state[i]) { \
+		if (HT_USED == table->state[i] && !CMP(table->key[i], key)) \
 			break; \
 		i = (i + 1) % table->size; \
 	} \
@@ -38,16 +40,17 @@ static inline NAME * \
 NAME ## _create(size_t size) \
 { \
 	NAME *table = ALLOC(sizeof(NAME) \
+			+ sizeof(int8_t) * size \
 			+ sizeof(K) * size \
 			+ sizeof(V *) * size); \
 	\
-	table->key = (K *) (table + 1); \
+	table->state = (int8_t *) (table + 1); \
+	table->key = (K *) (table->state + size); \
 	table->val = (V *) (table->key + size); \
 	table->used = 0; \
 	table->tombed = 0; \
 	table->size = size; \
-	memset(table->key, 0, sizeof(K) * size); \
-	memset(table->val, 0, sizeof(V) * size); \
+	memset(table->state, HT_NONE, sizeof(int8_t) * size); \
 	return table; \
 } \
 \
@@ -57,16 +60,15 @@ NAME ## _destroy(NAME *table) \
 	free(table); \
 } \
 \
-static inline V \
-NAME ## _find(NAME const *table, K key) \
+static inline bool \
+NAME ## _contains(NAME const *table, K key) \
 { \
 	size_t index = NAME ## _index(table, key); \
 	\
 	if (index >= table->size \
-	|| NULL == table->val[index] \
-	|| HT_TOMB == table->val[index]) \
-		return NULL; \
-	return table->val[index]; \
+	|| HT_USED != table->state[index]) \
+		return false; \
+	return true; \
 } \
 \
 static inline V * \
@@ -76,8 +78,11 @@ NAME ## _get(NAME *table, K key) \
 	\
 	if (index >= table->size) \
 		return NULL; \
-	table->key[index] = key; \
-	table->used += 1; \
+	if (HT_USED != table->state[index]) { \
+		table->used += 1; \
+		table->state[index] = HT_USED; \
+		table->key[index] = key; \
+	} \
 	return &table->val[index]; \
 } \
 \
@@ -86,31 +91,22 @@ NAME ## _at(NAME const *table, K key) \
 { \
 	size_t index = NAME ## _index(table, key); \
 	\
-	if (index >= table->size) \
+	if (index >= table->size \
+	&& HT_USED != table->state[index]) \
 		return NULL; \
 	return &table->val[index]; \
-} \
-\
-static inline bool \
-NAME ## _insert(NAME *table, K key, V val) \
-{ \
-	V *pp = NAME ## _get(table, key); \
-	\
-	if (!pp || *pp) \
-		return false; \
-	*pp = val; \
-	return true; \
 } \
 \
 static inline \
 void \
 NAME ## _delete(NAME *table, K key) \
 { \
-	V *pp = NAME ## _at(table, key); \
+	size_t index = NAME ## _index(table, key); \
 	\
-	if (!pp || !*pp) \
+	if (index >= table->size \
+	|| HT_USED != table->state[index]) \
 		return; \
-	*pp = HT_TOMB; \
+	table->state[index] = HT_TOMB; \
 	table->tombed += 1; \
 } \
 \
@@ -121,17 +117,16 @@ NAME ## _rehash(NAME *table, size_t n) \
 	NAME *new; \
 	\
 	/* Cannot resize without losing elements */ \
-	if (table->used - table->tombed <= n) \
+	if (table->used - table->tombed > n) \
 		return table; \
 	new = NAME ## _create(n); \
 	for (i = 0; i < table->size; ++i) { \
-		if (NULL == table->key[i] || HT_TOMB == table->key[i]) \
+		if (HT_USED != table->state[i]) \
 			continue; \
-		NAME ## _insert(new, table->key[i], table->val[i]); \
+		* NAME ## _get(new, table->key[i]) = table->val[i]; \
 	} \
 	NAME ## _destroy(table); \
-	table = new; \
-	return table; \
+	return new; \
 } \
 
 #endif
