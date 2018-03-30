@@ -131,6 +131,6 @@ NAME ## _rehash(NAME *table, size_t n) \
 	} \
 	NAME ## _destroy(table); \
 	return new; \
-} \
+}
 
 #endif
