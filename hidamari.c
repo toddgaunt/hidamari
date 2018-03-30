@@ -10,15 +10,15 @@
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-static double const drop_time = 1.0;
-static uint8_t const slide_time = 15;
+static f32 const drop_time = 1.0;
+static u8 const slide_time = 15;
 
 static void r7system(HidamariShape bag[7]);
 static void field_init(HidamariBuffer *buf, HidamariPlayField *field);
 static void field_update(HidamariBuffer *buf, HidamariPlayField *field, Button act);
 
 /* Gravity of the falling piece at certain levels */
-static float gravity_level[15] = {
+static f32 gravity_level[15] = {
 	0.01667,
 	0.021017,
 	0.026977,
@@ -47,6 +47,32 @@ static char const hidamari_shape_char[HIDAMARI_LAST] =
 	'T',
 	'Z',
 };
+
+static void
+draw_field(HidamariBuffer *buf, HidamariPlayField *field)
+{
+	int i;
+	size_t x, y;
+
+	for (x = 0; x < HIDAMARI_WIDTH; ++x) {
+		for (y = 0; y < HIDAMARI_WIDTH; ++y) {
+			if (field->grid[y] & 1 << x) {
+				buf->tile[x][y] = '#';
+			} else {
+				buf->tile[x][y] = ' ';
+			}
+		}
+	}
+	for (i = 0; i < 4; ++i) {
+		x = hidamari_orientation[field->current.shape]
+		                              [field->current.orientation]
+		                              [i].x + field->current.pos.x;
+		y = hidamari_orientation[field->current.shape]
+		                        [field->current.orientation]
+		                        [i].y + field->current.pos.y;
+		buf->tile[x][y] = '$';
+	}
+}
 
 static void
 dump_field(HidamariPlayField *field)
@@ -86,6 +112,26 @@ dump_field(HidamariPlayField *field)
 	printf("--\n");
 }
 
+static void
+clear_lines(HidamariPlayField *field)
+{
+	size_t y;
+
+	/* for (y = 1; y < HIDAMARI_HEIGHT; ++y) { */
+	/* 	if (2046 == (field->grid[y] & 2046)) { */
+	/* 		field->grid[y] = 2049; */
+	/* 	} */
+	/* } */
+}
+
+static bool
+is_game_over(HidamariPlayField *field)
+{
+	if (field->grid[HIDAMARI_HEIGHT] & 2046)
+		return true;
+	return false;
+}
+
 /* Get a new hidamari into play, and update the next hidamari */
 static void
 get_next_hidamari(HidamariPlayField *field)
@@ -105,10 +151,10 @@ get_next_hidamari(HidamariPlayField *field)
 
 /* Check if the Hidamari would collide in the given grid, at the given x,y coordinates */
 static bool
-is_collision(Hidamari const *t, u10 grid[HIDAMARI_HEIGHT])
+is_collision(Hidamari const *t, u12 grid[HIDAMARI_HEIGHT])
 {
 	int i;
-	u10 x, y;
+	u12 x, y;
 
 	for (i = 0; i < 4; ++i) {
 		x = 1 << (hidamari_orientation[t->shape][t->orientation][i].x + t->pos.x);
@@ -124,7 +170,7 @@ static void
 lock_current(HidamariPlayField *field)
 {
 	int i;
-	u10 x, y;
+	u12 x, y;
 
 	for (i = 0; i < 4; ++i) {
 		x = 1 << (hidamari_orientation[field->current.shape]
@@ -214,7 +260,7 @@ field_init(HidamariBuffer *buf, HidamariPlayField *field)
 	/* Initialize the borders */
 	field->grid[0] |= 4095;
 	for (i = 1; i < HIDAMARI_HEIGHT; ++i) {
-		field->grid[i] |= 2049;
+		field->grid[i] = 2049;
 	}
 }
 
@@ -243,11 +289,30 @@ field_update(HidamariBuffer *buf, HidamariPlayField *field, Button act)
 		/* Don't perform any action for an illegal action */
 		break;
 	}
-	if (!move_current(field, BUTTON_DOWN)) {
-		lock_current(field);
-		get_next_hidamari(field);
+	field->gravity_timer += gravity_level[field->level];
+	/* If its not time for an update, then return early */
+	if (field->gravity_timer >= drop_time) {
+		if (move_current(field, BUTTON_DOWN)) {
+			field->gravity_timer = MAX(0.0, field->gravity_timer
+					- drop_time);
+		} else {
+			if (field->slide_timer < slide_time) {
+				field->slide_timer += 1;
+			} else {
+				lock_current(field);
+				//clear_lines(field);
+				get_next_hidamari(field);
+				field->slide_timer = 0;
+				if (is_game_over(field)) {
+					printf("lines: %d\n", field->lines);
+					printf("score: %d\n", field->score);
+					field_init(buf, field);
+				}
+			}
+		}
 	}
-	dump_field(field);
+	draw_field(buf, field);
+	/* dump_field(field); */
 }
 
 void

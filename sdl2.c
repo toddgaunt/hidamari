@@ -12,6 +12,11 @@
 
 #define TILE_S 16
 
+void
+render(SDL_Renderer *renderer, SDL_Texture *texure, HidamariBuffer *buf)
+{
+}
+
 int
 main()
 {
@@ -109,7 +114,7 @@ main()
 			button = BUTTON_NONE;
 		}
 
-		//render(renderer, tileset_hw, &buf);
+		render(renderer, tileset_hw, &buf);
 	}
 
 	SDL_DestroyWindow(screen);

@@ -6,7 +6,7 @@
 
 #include "type.h"
 
-#define HIDAMARI_HEIGHT 22
+#define HIDAMARI_HEIGHT 24
 #define HIDAMARI_WIDTH 12
 
 #define HIDAMARI_BUFFER_HEIGHT HIDAMARI_HEIGHT + 10
@@ -45,7 +45,7 @@ typedef enum {
 
 typedef struct {
 	char tile[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
-	uint8_t color[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT][3];
+	u8 color[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT][3];
 } HidamariBuffer;
 
 typedef struct {
@@ -57,7 +57,7 @@ typedef struct {
 struct HidamariPlayField {
 	/* Scoring */
 	u8 level;
-	u32 score; 
+	u16 score; 
 	u16 lines; 
 	/* Timing */
 	f32 gravity_timer; 
@@ -68,7 +68,7 @@ struct HidamariPlayField {
 	/* Hidamaries */
 	HidamariShape next : 4; /* Lookahead piece for player */
 	Hidamari current;
-	u10 grid[HIDAMARI_HEIGHT + 2]; /* Represents static Hidamaries */
+	u12 grid[HIDAMARI_HEIGHT]; /* Represents static Hidamaries */
 };
 
 typedef struct {
