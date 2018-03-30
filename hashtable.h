@@ -7,9 +7,17 @@
 
 #define HT_TOMB ((void *)-1) /* Used to denote deleted elements */
 
+/* NOTE: K and V must be pointer types, or unexpected behavior may occur */
 #define HASHTABLE_INSTANTIATE(NAME, K, V, ALLOC, HASH, CMP) \
 typedef struct NAME NAME; \
-struct NAME {K *key; V *val; size_t used; size_t tombed; size_t size;}; \
+struct NAME { \
+	K *key; \
+	V *val; \
+	size_t used; \
+	size_t tombed; \
+	size_t size; \
+}; \
+\
 static inline size_t \
 NAME ## _index(NAME const *table, K key) \
 { \
