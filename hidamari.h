@@ -9,10 +9,38 @@
 #define HIDAMARI_HEIGHT 24
 #define HIDAMARI_WIDTH 12
 
-#define HIDAMARI_BUFFER_HEIGHT HIDAMARI_HEIGHT + 10
-#define HIDAMARI_BUFFER_WIDTH HIDAMARI_WIDTH + 2
+#define HIDAMARI_BUFFER_HEIGHT HIDAMARI_HEIGHT
+#define HIDAMARI_BUFFER_WIDTH HIDAMARI_WIDTH
 
 typedef struct HidamariPlayField HidamariPlayField;
+
+typedef enum {
+	HIDAMARI_TILE_0,
+	HIDAMARI_TILE_1,
+	HIDAMARI_TILE_2,
+	HIDAMARI_TILE_3,
+	HIDAMARI_TILE_4,
+	HIDAMARI_TILE_5,
+	HIDAMARI_TILE_6,
+	HIDAMARI_TILE_7,
+	HIDAMARI_TILE_8,
+	HIDAMARI_TILE_9,
+	HIDAMARI_TILE_PLACEHOLDER1,
+	HIDAMARI_TILE_PLACEHOLDER2,
+	HIDAMARI_TILE_PLACEHOLDER3,
+	HIDAMARI_TILE_PLACEHOLDER4,
+	HIDAMARI_TILE_PLACEHOLDER5,
+	HIDAMARI_TILE_PLACEHOLDER6,
+	HIDAMARI_TILE_SPACE,
+	HIDAMARI_TILE_I,
+	HIDAMARI_TILE_J,
+	HIDAMARI_TILE_L,
+	HIDAMARI_TILE_O,
+	HIDAMARI_TILE_S,
+	HIDAMARI_TILE_T,
+	HIDAMARI_TILE_Z,
+	HIDAMARI_TILE_LAST, /* Not an actual tile, just used for enum length */
+} HidamariTile;
 
 typedef enum {
 	BUTTON_NONE = 0,
@@ -124,11 +152,11 @@ static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 		/* - L - 
 		   - L - 
 		   - L L*/
-		{VEC2(1, 2), VEC2(2, 0), VEC2(2, 1), VEC2(2, 2)},
+		{VEC2(1, 0), VEC2(1, 1), VEC2(1, 2), VEC2(2, 0)},
 		/* - - -
 		   L L L
 		   L - - */
-		{VEC2(0, 1), VEC2(0, 2), VEC2(1, 2), VEC2(2, 2)},
+		{VEC2(0, 0), VEC2(0, 1), VEC2(1, 1), VEC2(2, 1)},
 		/* L L - 
 		   - L - 
 		   - L - */
@@ -203,7 +231,7 @@ static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 /* Initialize the playfield. Is pseudo-idempotent, the randomized portions
  * are always different. */
 void
-hidamari_init(HidamariBuffer *buf, HidamariGame *field);
+hidamari_init(HidamariBuffer *buf, HidamariGame *game);
 
 /* Update the playfield by one timestep:
  *	Perform the player action;
@@ -214,6 +242,6 @@ hidamari_init(HidamariBuffer *buf, HidamariGame *field);
  * This is the only function needed to run the game after initialization.
  */
 void
-hidamari_update(HidamariBuffer *buf, HidamariGame *field, Button act);
+hidamari_update(HidamariBuffer *buf, HidamariGame *game, Button act);
 
 #endif

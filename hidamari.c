@@ -55,11 +55,11 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 	size_t x, y;
 
 	for (x = 0; x < HIDAMARI_WIDTH; ++x) {
-		for (y = 0; y < HIDAMARI_WIDTH; ++y) {
+		for (y = 0; y < HIDAMARI_HEIGHT; ++y) {
 			if (field->grid[y] & 1 << x) {
-				buf->tile[x][y] = '#';
+				buf->tile[x][y] = HIDAMARI_TILE_I;
 			} else {
-				buf->tile[x][y] = ' ';
+				buf->tile[x][y] = HIDAMARI_TILE_SPACE;
 			}
 		}
 	}
@@ -70,46 +70,8 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 		y = hidamari_orientation[field->current.shape]
 		                        [field->current.orientation]
 		                        [i].y + field->current.pos.y;
-		buf->tile[x][y] = '$';
+		buf->tile[x][y] = HIDAMARI_TILE_I;
 	}
-}
-
-static void
-dump_field(HidamariPlayField *field)
-{
-	int i;
-	size_t x, y;
-	char buf[HIDAMARI_WIDTH][HIDAMARI_HEIGHT];
-
-	for (x = 0; x < HIDAMARI_WIDTH; ++x) {
-		for (y = 0; y < HIDAMARI_HEIGHT; ++y) {
-			if (field->grid[y] & 1 << x) {
-				buf[x][y] = '#';
-			} else {
-				buf[x][y] = '.';
-			}
-		}
-	}
-	printf("shape: %d\n", field->current.shape);
-	for (i = 0; i < 4; ++i) {
-		x = hidamari_orientation[field->current.shape]
-		                              [field->current.orientation]
-		                              [i].x + field->current.pos.x;
-		y = hidamari_orientation[field->current.shape]
-		                        [field->current.orientation]
-		                        [i].y + field->current.pos.y;
-		printf("x, y: %zu, %zu\n", x, y);
-		buf[x][y] = '$';
-	}
-	printf("--\n");
-	for (x = 0; x < HIDAMARI_WIDTH; ++x) {
-		for (y = 0; y < HIDAMARI_HEIGHT; ++y) {
-			putc(buf[x][y], stdout);
-			putc(' ', stdout);
-		}
-		putc('\n', stdout);
-	}
-	printf("--\n");
 }
 
 static void
@@ -127,7 +89,7 @@ clear_lines(HidamariPlayField *field)
 static bool
 is_game_over(HidamariPlayField *field)
 {
-	if (field->grid[HIDAMARI_HEIGHT] & 2046)
+	if (field->grid[HIDAMARI_HEIGHT - 1] & 2046)
 		return true;
 	return false;
 }
@@ -238,7 +200,15 @@ rotate_current(HidamariPlayField *field, Button dir)
 
 	Hidamari tmp = field->current;
 
-	tmp.orientation = (tmp.orientation + 1) % 4;
+	if (BUTTON_R == dir) {
+		tmp.orientation = (tmp.orientation + 1) % 4;
+	} else {
+		if (0 == tmp.orientation) {
+			tmp.orientation = 3;
+		} else {
+			tmp.orientation -= 1;
+		}
+	}
 	if (!is_collision(&tmp, field->grid))
 		field->current = tmp;
 }
@@ -312,7 +282,6 @@ field_update(HidamariBuffer *buf, HidamariPlayField *field, Button act)
 		}
 	}
 	draw_field(buf, field);
-	/* dump_field(field); */
 }
 
 void
