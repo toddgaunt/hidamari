@@ -13,8 +13,32 @@
 #define TILE_S 16
 
 void
-render(SDL_Renderer *renderer, SDL_Texture *texure, HidamariBuffer *buf)
+render(SDL_Renderer *renderer, SDL_Texture *texture, HidamariBuffer *buf)
 {
+	int i, j;
+	SDL_Rect src_r = {.h = TILE_S, .w = TILE_S, .x = 0, .y = 0};
+	SDL_Rect dest_r = {.h = TILE_S, .w = TILE_S, .x = 0, .y = 0};
+	char tile;
+
+	SDL_RenderClear(renderer);
+	/* Render the static grid */
+	for (i = 0; i < HIDAMARI_BUFFER_WIDTH; ++i) {
+		for (j = 0; j < HIDAMARI_BUFFER_HEIGHT; ++j) {
+			tile = buf->tile[HIDAMARI_BUFFER_WIDTH - 1 - i]
+				[HIDAMARI_BUFFER_HEIGHT - 1 -j];
+			if (HIDAMARI_TILE_SPACE == tile)
+				continue;
+			dest_r.x = TILE_S * (HIDAMARI_BUFFER_WIDTH - 1 - i);
+			dest_r.y = TILE_S * j;
+			src_r.x = TILE_S * (tile % 14);
+			src_r.y = TILE_S * (tile / 14);
+			SDL_RenderCopy(renderer, texture, &src_r, &dest_r);
+		}
+	}
+
+	/* Background color */
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	SDL_RenderPresent(renderer); 
 }
 
 int
@@ -98,7 +122,7 @@ main()
 					break;
 				case SDLK_RETURN:
 				case SDLK_SPACE:
-					button = BUTTON_X;
+					button = BUTTON_B;
 					break;
 				default:
 					button = BUTTON_NONE;
