@@ -24,14 +24,16 @@ static inline size_t \
 NAME ## _index(NAME const *table, K key) \
 { \
 	size_t i; \
+	size_t begin; \
 	 \
-	if (table->used == table->size) \
-		return table->size; \
-	i = HASH(key) % table->size; \
+	begin = HASH(key) % table->size; \
+	i = begin; \
 	while (HT_NONE != table->state[i]) { \
 		if (HT_USED == table->state[i] && !CMP(table->key[i], key)) \
 			break; \
 		i = (i + 1) % table->size; \
+		if (begin == i) \
+			return table->size; \
 	} \
 	return i; \
 } \
@@ -76,6 +78,7 @@ NAME ## _get(NAME *table, K key) \
 { \
 	size_t index = NAME ## _index(table, key); \
 	\
+	printf("foo %zu\n", index); \
 	if (index >= table->size) \
 		return NULL; \
 	if (HT_USED != table->state[index]) { \
@@ -106,6 +109,7 @@ NAME ## _delete(NAME *table, K key) \
 	if (index >= table->size \
 	|| HT_USED != table->state[index]) \
 		return; \
+	printf("bar %zu\n", index); \
 	table->state[index] = HT_TOMB; \
 	table->tombed += 1; \
 } \
