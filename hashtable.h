@@ -2,8 +2,9 @@
 #ifndef HASHTABLE_H
 #define HASHTABLE_H
 
-#include <stdlib.h>
+#include <assert.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #define HT_USED 1
 #define HT_NONE 0
@@ -77,10 +78,12 @@ NAME ## _index(NAME const *table, K key) \
 static inline NAME * \
 NAME ## _create(size_t size) \
 { \
+	assert(0 != size); \
+	\
 	NAME *table = ALLOC(sizeof(NAME) \
 			+ sizeof(int8_t) * size \
 			+ sizeof(K) * size \
-			+ sizeof(V *) * size); \
+			+ sizeof(V) * size); \
 	\
 	table->state = (int8_t *) (table + 1); \
 	table->key = (K *) (table->state + size); \
