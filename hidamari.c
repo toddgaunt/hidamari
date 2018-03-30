@@ -128,7 +128,7 @@ get_next_hidamari(HidamariPlayField *field)
 
 /* Check if the Hidamari would collide in the given grid, at the given x,y coordinates */
 static bool
-is_collision(Hidamari const *t, u12 grid[HIDAMARI_HEIGHT])
+is_collision(Hidamari const *t, u12 const grid[HIDAMARI_HEIGHT])
 {
 	int i;
 	u12 x, y;
