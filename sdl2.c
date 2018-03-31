@@ -78,7 +78,7 @@ main()
 	SDL_Texture *tileset_hw = SDL_CreateTextureFromSurface(renderer, tileset_sf);
 
 	srand(time(NULL));
-	hidamari_init(&buf, &game);
+	hidamari_setup(&buf, &game);
 	while(keypress) {
 		// Uncomment and change the number below to test lag!
 		//usleep(100000);
