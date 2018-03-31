@@ -5,10 +5,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#define HEAP_LEFT(i) (2 * (i) + 1)
-#define HEAP_RIGHT(i) (2 * (i) + 2)
-#define HEAP_PARENT(i) (((i) - 1) / 2)
-
 #define HEAP_INSTANTIATE(NAME, T, ALLOC, CMP) \
 typedef struct NAME NAME; \
 struct NAME { \
@@ -18,69 +14,56 @@ struct NAME { \
 }; \
 \
 static inline void \
-NAME ## _move_up(NAME *heap) \
+NAME ## _move_up(NAME *heap, size_t index) \
 { \
-	size_t parent = HEAP_PARENT(heap->len - 1); \
-	size_t child = 0; \
-	T *data = heap->vec; \
+	size_t smallest; \
+	size_t left; \
+	size_t right; \
 	T swap; \
 	\
-	if (heap->len <= 1) \
-		return; \
-	for (;;) { \
-		if (HEAP_LEFT(parent) < heap->len \
-		&& 0 > CMP(data[HEAP_LEFT(parent)], data[parent])) { \
-			child = HEAP_LEFT(parent); \
-		} else if (HEAP_RIGHT(parent) < heap->len \
-		&& 0 > CMP(data[HEAP_RIGHT(parent)], \
-			data[parent])) { \
-			child = HEAP_RIGHT(parent); \
-		} else { \
-			/* Neither child violates heap property */ \
-			break; \
-		} \
+	while (index >= 1) { \
+		smallest = index; \
+		left = 2 * index; \
+		right = 2 * index + 1; \
+		if (left < heap->len \
+		&& 0 > CMP(heap->vec[left], heap->vec[smallest])) \
+			smallest = left; \
+		if (right < heap->len \
+		&& 0 > CMP(heap->vec[right], heap->vec[smallest])) \
+			smallest = right; \
 		/* Swap the child with it's parent */ \
-		swap = data[parent]; \
-		data[parent] = data[child]; \
-		data[child] = swap; \
-		\
-		if (0 == parent) \
-			break; \
-		\
-		parent = HEAP_PARENT(parent); \
+		swap = heap->vec[index]; \
+		heap->vec[index] = heap->vec[smallest]; \
+		heap->vec[smallest] = swap; \
+		index = index / 2; \
 	} \
 } \
 \
 static inline void \
 NAME ## _move_down(NAME *heap, size_t index) \
 { \
-	size_t child = 0; \
-	T *data = heap->vec; \
+	size_t smallest; \
+	size_t left; \
+	size_t right; \
 	T swap; \
 	\
 	for (;;) { \
-		if (HEAP_RIGHT(index) >= heap->len \
-		&& HEAP_LEFT(index) >= heap->len) { \
+		smallest = index; \
+		left = 2 * index; \
+		right = 2 * index + 1; \
+		if (left <= heap->len \
+		&& 0 > CMP(heap->vec[left], heap->vec[smallest])) \
+			smallest = left; \
+		if (right <= heap->len \
+		&& 0 > CMP(heap->vec[right], heap->vec[smallest])) \
+			smallest = right; \
+		if (smallest == index) \
 			break; \
-		} else if (HEAP_RIGHT(index) >= heap->len) { \
-			child = HEAP_LEFT(index); \
-		} else if (HEAP_LEFT(index) >= heap->len) { \
-			child = HEAP_RIGHT(index); \
-		} else { \
-			printf("foo\n"); \
-			if (0 > CMP(data[HEAP_LEFT(index)], \
-					  data[HEAP_RIGHT(index)])) { \
-				child = HEAP_LEFT(index); \
-			} else { \
-				child = HEAP_RIGHT(index); \
-			} \
-		} \
 		/* Swap the child with it's parent */ \
-		swap = data[index]; \
-		data[index] = data[child]; \
-		data[child] = swap; \
-		\
-		index = child; \
+		swap = heap->vec[index]; \
+		heap->vec[index] = heap->vec[smallest]; \
+		heap->vec[smallest] = swap; \
+		index = smallest; \
 	} \
 } \
 \
@@ -92,8 +75,11 @@ NAME ## _create(size_t n) \
 	if (!ret) \
 		return NULL; \
 	memset(ret, 0, sizeof(NAME) + sizeof(T) * n); \
-	ret->vec = (T *) (ret + 1); \
+	/* ret->vec = (T *) (ret + 1); \ */ \
+	ret->vec = ALLOC(sizeof(T) * n); \
 	ret->size = n; \
+	/* Decrement the array by one, since index 0 will never be used */ \
+	ret->vec -= 1; \
 	return ret; \
 } \
 \
@@ -108,17 +94,17 @@ NAME ## _push(NAME *heap, T elem) \
 { \
 	if (heap->len >= heap->size) \
 		return -1; \
-	heap->vec[heap->len++] = elem; \
-	NAME ## _move_up(heap); \
+	heap->vec[++heap->len] = elem; \
+	NAME ## _move_up(heap, heap->len / 2); \
 	return 0; \
 } \
 \
 static inline T \
 NAME ## _pop(NAME *heap) \
 { \
-	T ret = heap->vec[0]; \
-	heap->vec[0] = heap->vec[--heap->len]; \
-	NAME ## _move_down(heap, 0); \
+	T ret = heap->vec[1]; \
+	heap->vec[1] = heap->vec[heap->len--]; \
+	NAME ## _move_down(heap, 1); \
 	return ret; \
 }
 
