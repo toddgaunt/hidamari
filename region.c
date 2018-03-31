@@ -18,6 +18,27 @@ overflows(size_t a, size_t b)
 }
 
 void *
+region_alloc(void *handle, size_t n)
+{
+	void *ret;
+	Region *region = handle;
+
+	if (overflows(region->sp, n) || region->sp + n > region->size)
+		return NULL;
+	ret = &region->mem[region->sp];
+	region->sp += n;
+	return ret;
+}
+
+void
+region_clear(void *handle)
+{
+	Region *region = handle;
+
+	region->sp = 0;
+}
+
+void *
 region_create(size_t n)
 {
 	Region *region = malloc(sizeof(*region) + n);
@@ -32,17 +53,4 @@ void
 region_destroy(void const *region)
 {
 	free((void *)region);
-}
-
-void *
-region_alloc(void *handle, size_t n)
-{
-	void *ret;
-	Region *region = handle;
-
-	if (overflows(region->sp, n) || region->sp + n > region->size)
-		return NULL;
-	ret = &region->mem[region->sp];
-	region->sp += n;
-	return ret;
 }

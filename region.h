@@ -7,6 +7,10 @@
 void *
 region_alloc(void *region, size_t n);
 
+/* Reset a region for re-use */
+void
+region_clear(void *region);
+
 void *
 region_create(size_t n);
 
