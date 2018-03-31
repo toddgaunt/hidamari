@@ -138,8 +138,7 @@ NAME ## _at(NAME const *table, K key) \
 	return &table->val[index]; \
 } \
 \
-static inline \
-void \
+static inline void \
 NAME ## _delete(NAME *table, K key) \
 { \
 	size_t index = NAME ## _index(table, key); \
