@@ -31,7 +31,8 @@ NAME ## _move_up(NAME *heap, size_t index) \
 		if (right < heap->len \
 		&& 0 > CMP(heap->vec[right], heap->vec[smallest])) \
 			smallest = right; \
-		/* Swap the child with it's parent */ \
+		if (smallest == index) \
+			break; \
 		swap = heap->vec[index]; \
 		heap->vec[index] = heap->vec[smallest]; \
 		heap->vec[smallest] = swap; \
@@ -59,7 +60,6 @@ NAME ## _move_down(NAME *heap, size_t index) \
 			smallest = right; \
 		if (smallest == index) \
 			break; \
-		/* Swap the child with it's parent */ \
 		swap = heap->vec[index]; \
 		heap->vec[index] = heap->vec[smallest]; \
 		heap->vec[smallest] = swap; \
