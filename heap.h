@@ -74,10 +74,9 @@ NAME ## _create(size_t n) \
 	\
 	if (!ret) \
 		return NULL; \
-	memset(ret, 0, sizeof(NAME) + sizeof(T) * n); \
-	/* ret->vec = (T *) (ret + 1); \ */ \
-	ret->vec = ALLOC(sizeof(T) * n); \
+	ret->vec = (T *) (ret + 1); \
 	ret->size = n; \
+	ret->len = 0; \
 	/* Decrement the array by one, since index 0 will never be used */ \
 	ret->vec -= 1; \
 	return ret; \
