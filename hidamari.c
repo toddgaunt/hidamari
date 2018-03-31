@@ -1,12 +1,15 @@
 /* See LICENSE file for copyright and license details */
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
-#include <stdio.h>
 #include <assert.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include "hashtable.h"
+#include "heap.h"
 #include "hidamari.h"
+#include "region.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -14,9 +17,36 @@
 static f32 const drop_time = 1.0;
 static u8 const slide_time = 15;
 
-static void r7system(HidamariShape bag[7]);
-static void field_init(HidamariBuffer *buf, HidamariPlayField *field);
-static void field_update(HidamariBuffer *buf, HidamariPlayField *field, Button act);
+static void
+r7system(HidamariShape bag[7]);
+static void
+field_setup(HidamariBuffer *buf, HidamariPlayField *field);
+static void
+field_update(HidamariBuffer *buf, HidamariPlayField *field, Button act);
+
+static void *region;
+
+static void *
+ralloc(size_t n)
+{
+	return region_alloc(region, n);
+}
+
+static size_t
+field_hash(HidamariPlayField *a)
+{
+	return 0;
+}
+
+static int
+field_cmp(HidamariPlayField *a, HidamariPlayField *b)
+{
+	return 0;
+}
+
+HEAP_INSTANTIATE(heap, HidamariPlayField *, ralloc, field_cmp)
+HASHTABLE_INSTANTIATE(ht, HidamariPlayField *,  bool, ralloc, field_hash,
+		field_cmp)
 
 /* Gravity of the falling piece at certain levels */
 static f32 gravity_level[15] = {
@@ -91,12 +121,12 @@ clear_lines(HidamariPlayField *field)
 {
 	size_t y = 1;
 
+	printf("grid[1]: %d\n", field->grid[1]);
 	while (y < HIDAMARI_HEIGHT) {
 		if (2046 == (field->grid[y] & 2046)) {
-			field->grid[y] = 2049;
 			shift_lines(field, y);
 		} else {
-			++y;
+			y += 1;
 		}
 	}
 }
@@ -225,9 +255,10 @@ rotate_current(HidamariPlayField *field, Button dir)
 }
 
 static void
-field_init(HidamariBuffer *buf, HidamariPlayField *field)
+field_setup(HidamariBuffer *buf, HidamariPlayField *field)
 {
 	size_t i;
+
 	memset(field, 0, sizeof(*field));
 	/* Initialize the random bag */
 	r7system(field->bag);
@@ -243,6 +274,7 @@ field_init(HidamariBuffer *buf, HidamariPlayField *field)
 	for (i = 1; i < HIDAMARI_HEIGHT; ++i) {
 		field->grid[i] = 2049;
 	}
+	region = region_create(1024 << 10);
 }
 
 static void
@@ -287,7 +319,7 @@ field_update(HidamariBuffer *buf, HidamariPlayField *field, Button act)
 				if (is_game_over(field)) {
 					printf("lines: %d\n", field->lines);
 					printf("score: %d\n", field->score);
-					field_init(buf, field);
+					field_setup(buf, field);
 				}
 			}
 		}
@@ -296,13 +328,20 @@ field_update(HidamariBuffer *buf, HidamariPlayField *field, Button act)
 }
 
 void
-hidamari_init(HidamariBuffer *buf, HidamariGame *game)
+hidamari_setup(HidamariBuffer *buf, HidamariGame *game)
 {
-	field_init(buf, &game->field);
+	field_setup(buf, &game->field);
 }
 
 void
 hidamari_update(HidamariBuffer *buf, HidamariGame *game, Button act)
 {
 	field_update(buf, &game->field, act);
+}
+
+void
+hidamari_tear_down(HidamariGame *game)
+{
+	(void)game; //TMP
+	region_destroy(region);
 }

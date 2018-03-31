@@ -228,10 +228,10 @@ static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 	},
 };
 
-/* Initialize the playfield. Is pseudo-idempotent, the randomized portions
- * are always different. */
+/* Initialize the playfield, and allocate the global region used by all
+ * games. */
 void
-hidamari_init(HidamariBuffer *buf, HidamariGame *game);
+hidamari_setup(HidamariBuffer *buf, HidamariGame *game);
 
 /* Update the playfield by one timestep:
  *	Perform the player action;
@@ -243,5 +243,8 @@ hidamari_init(HidamariBuffer *buf, HidamariGame *game);
  */
 void
 hidamari_update(HidamariBuffer *buf, HidamariGame *game, Button act);
+
+void
+hidamari_tear_down(HidamariGame *game);
 
 #endif
