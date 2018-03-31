@@ -9,6 +9,47 @@
 #include <unistd.h>
 
 #include "hidamari.h"
+#include "heap.h"
+#include "hashtable.h"
+
+static inline size_t
+hash(int i)
+{
+	size_t const p = 16777619;
+	size_t hash = 2166136261u;
+
+	hash = (hash ^ i) * p;
+	hash += hash << 13;
+	hash ^= hash >> 7;
+	hash += hash << 3;
+	hash ^= hash >> 17;
+	hash += hash << 5;
+	return hash;
+}
+
+static inline size_t
+ht_hash(char const *str)
+{
+	size_t const p = 16777619;
+ 	size_t hash = 2166136261u;
+
+	for (; *str; ++str)
+		hash = (hash ^ *str) * p;
+ 	hash += hash << 13;
+ 	hash ^= hash >> 7;
+ 	hash += hash << 3;
+ 	hash ^= hash >> 17;
+ 	hash += hash << 5;
+ 	return hash;
+ }
+
+static int
+intcmp(int a, int b)
+{
+	return a - b;
+}
+
+HEAP_INSTANTIATE(HeapStr, int8_t, malloc, intcmp)
 
 static void
 dump_field(HidamariPlayField *field)
@@ -55,7 +96,7 @@ main()
 	HidamariGame game;
 
 	srand(time(NULL));
-	hidamari_init(&buf, &game);
+	hidamari_setup(&buf, &game);
 	game.field.grid[0] |= 7 << 1;
 	while(1) {
 		//usleep(100000);
