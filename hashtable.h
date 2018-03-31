@@ -123,6 +123,7 @@ NAME ## _get(NAME *table, K key) \
 		table->used += 1; \
 		table->state[index] = HT_USED; \
 		table->key[index] = key; \
+		memset(&table->val[index], 0, sizeof(V)); \
 	} \
 	return &table->val[index]; \
 } \
@@ -133,7 +134,7 @@ NAME ## _at(NAME const *table, K key) \
 	size_t index = NAME ## _index(table, key); \
 	\
 	if (index >= table->size \
-	&& HT_USED != table->state[index]) \
+	|| HT_USED != table->state[index]) \
 		return NULL; \
 	return &table->val[index]; \
 } \
