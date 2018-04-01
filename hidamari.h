@@ -6,13 +6,11 @@
 
 #include "type.h"
 
-#define HIDAMARI_HEIGHT 24
+#define HIDAMARI_HEIGHT 23
 #define HIDAMARI_WIDTH 12
 
-#define HIDAMARI_BUFFER_HEIGHT HIDAMARI_HEIGHT
+#define HIDAMARI_BUFFER_HEIGHT HIDAMARI_HEIGHT - 3
 #define HIDAMARI_BUFFER_WIDTH HIDAMARI_WIDTH
-
-typedef struct HidamariPlayField HidamariPlayField;
 
 typedef enum {
 	HIDAMARI_TILE_0,
@@ -82,7 +80,7 @@ typedef struct {
 	u8 orientation : 3;
 } Hidamari;
 
-struct HidamariPlayField {
+typedef struct {
 	/* Scoring */
 	u8 level;
 	u16 score; 
@@ -97,9 +95,20 @@ struct HidamariPlayField {
 	HidamariShape next : 4; /* Lookahead piece for player */
 	Hidamari current;
 	u12 grid[HIDAMARI_HEIGHT]; /* Represents static Hidamaries */
-};
+} HidamariPlayField;
+
+/* State that is saved for the renderer */
+typedef struct {
+	u8 level;
+	u16 score;
+	HidamariShape next : 4;
+	Hidamari current;
+} HidamariState;
 
 typedef struct {
+	HidamariBuffer buf;
+	HidamariState old;
+	HidamariState new;
 	HidamariPlayField field;
 } HidamariGame;
 
@@ -229,9 +238,9 @@ static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 };
 
 /* Initialize the playfield, and allocate the global region used by all
- * games. */
+ * games. Pseudo-idempotent. */
 void
-hidamari_setup(HidamariBuffer *buf, HidamariGame *game);
+hidamari_init(HidamariGame *game);
 
 /* Update the playfield by one timestep:
  *	Perform the player action;
@@ -242,9 +251,12 @@ hidamari_setup(HidamariBuffer *buf, HidamariGame *game);
  * This is the only function needed to run the game after initialization.
  */
 void
-hidamari_update(HidamariBuffer *buf, HidamariGame *game, Button act);
+hidamari_update(HidamariGame *game, Button act);
 
 void
-hidamari_tear_down(HidamariGame *game);
+hidamari_state_save(HidamariGame *game, u1 slot);
+
+void
+hidamari_buffer_draw(HidamariGame *game);
 
 #endif

@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 /* Documentation types. */
+typedef uint8_t u1;
 typedef uint8_t u4;
 typedef uint16_t u12;
 

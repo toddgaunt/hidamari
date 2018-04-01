@@ -9,6 +9,7 @@
 #include "hashtable.h"
 #include "heap.h"
 #include "hidamari.h"
+#include "ralloc.h"
 #include "region.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -20,17 +21,10 @@ static u8 const slide_time = 15;
 static void
 r7system(HidamariShape bag[7]);
 static void
-field_setup(HidamariBuffer *buf, HidamariPlayField *field);
-static void
-field_update(HidamariBuffer *buf, HidamariPlayField *field, Button act);
+field_init(HidamariPlayField *field);
+static int
+field_update(HidamariPlayField *field, Button act);
 
-static void *region;
-
-static void *
-ralloc(size_t n)
-{
-	return region_alloc(region, n);
-}
 
 static size_t
 field_hash(HidamariPlayField *a)
@@ -86,7 +80,7 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 	size_t x, y;
 
 	for (x = 0; x < HIDAMARI_WIDTH; ++x) {
-		for (y = 0; y < HIDAMARI_HEIGHT; ++y) {
+		for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
 			if (field->grid[y] & 1 << x) {
 				buf->tile[x][y] = HIDAMARI_TILE_I;
 			} else {
@@ -101,6 +95,8 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 		y = hidamari_orientation[field->current.shape]
 		                        [field->current.orientation]
 		                        [i].y + field->current.pos.y;
+		if (y >= HIDAMARI_BUFFER_HEIGHT)
+			continue;
 		buf->tile[x][y] = HIDAMARI_TILE_I;
 	}
 }
@@ -121,7 +117,6 @@ clear_lines(HidamariPlayField *field)
 {
 	size_t y = 1;
 
-	printf("grid[1]: %d\n", field->grid[1]);
 	while (y < HIDAMARI_HEIGHT) {
 		if (2046 == (field->grid[y] & 2046)) {
 			shift_lines(field, y);
@@ -145,8 +140,8 @@ get_next_hidamari(HidamariPlayField *field)
 {
 	field->current.shape = field->next;
 	field->current.orientation = 0;
-	field->current.pos.x = 10 / 2 - 2;
-	field->current.pos.y = HIDAMARI_HEIGHT - 4;
+	field->current.pos.x = 10 / 2 - 1;
+	field->current.pos.y = HIDAMARI_HEIGHT - 3;
 
 	if (field->bag_pos >= 7) {
 		r7system(field->bag);
@@ -255,7 +250,7 @@ rotate_current(HidamariPlayField *field, Button dir)
 }
 
 static void
-field_setup(HidamariBuffer *buf, HidamariPlayField *field)
+field_init(HidamariPlayField *field)
 {
 	size_t i;
 
@@ -274,11 +269,10 @@ field_setup(HidamariBuffer *buf, HidamariPlayField *field)
 	for (i = 1; i < HIDAMARI_HEIGHT; ++i) {
 		field->grid[i] = 2049;
 	}
-	region = region_create(1024 << 10);
 }
 
-static void
-field_update(HidamariBuffer *buf, HidamariPlayField *field, Button act)
+static int
+field_update(HidamariPlayField *field, Button act)
 {
 	switch (act) {
 	case BUTTON_NONE:
@@ -316,32 +310,40 @@ field_update(HidamariBuffer *buf, HidamariPlayField *field, Button act)
 				clear_lines(field);
 				get_next_hidamari(field);
 				field->slide_timer = 0;
-				if (is_game_over(field)) {
-					printf("lines: %d\n", field->lines);
-					printf("score: %d\n", field->score);
-					field_setup(buf, field);
-				}
+				if (is_game_over(field))
+					return 1;
 			}
 		}
 	}
-	draw_field(buf, field);
+	return 0;
 }
 
 void
-hidamari_setup(HidamariBuffer *buf, HidamariGame *game)
+buffer_init(HidamariBuffer *buf)
 {
-	field_setup(buf, &game->field);
 }
 
 void
-hidamari_update(HidamariBuffer *buf, HidamariGame *game, Button act)
+hidamari_init(HidamariGame *game)
 {
-	field_update(buf, &game->field, act);
+	buffer_init(&game->buf);
+	field_init(&game->field);
 }
 
 void
-hidamari_tear_down(HidamariGame *game)
+hidamari_update(HidamariGame *game, Button act)
 {
-	(void)game; //TMP
-	region_destroy(region);
+	field_update(&game->field, act);
+}
+
+void
+hidamari_state_save(HidamariGame *game, u1 slot)
+{
+	HidamariState *state = slot ? &game->new : &game->old;
+}
+
+void
+hidamari_buffer_draw(HidamariGame *game)
+{
+	draw_field(&game->buf, &game->field);
 }

@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "hidamari.h"
+#include "ralloc.h"
 
 #define TILE_S 16
 
@@ -55,7 +56,6 @@ main()
 	acc = 0.0;
 	bool keypress = true;
 	Button button = BUTTON_NONE;
-	HidamariBuffer buf;
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		return EXIT_FAILURE;
@@ -78,7 +78,8 @@ main()
 	SDL_Texture *tileset_hw = SDL_CreateTextureFromSurface(renderer, tileset_sf);
 
 	srand(time(NULL));
-	hidamari_setup(&buf, &game);
+	ralloc_aquire(1024 << 10);
+	hidamari_init(&game);
 	while(keypress) {
 		// Uncomment and change the number below to test lag!
 		//usleep(100000);
@@ -132,13 +133,15 @@ main()
 			}
 		}
 
+		hidamari_state_save(&game, 0);
 		while (acc >= dt) {
-			hidamari_update(&buf, &game, button);
+			hidamari_update(&game, button);
 			acc -= dt;
 			button = BUTTON_NONE;
 		}
-
-		render(renderer, tileset_hw, &buf);
+		hidamari_state_save(&game, 1);
+		hidamari_buffer_draw(&game);
+		render(renderer, tileset_hw, &game.buf);
 	}
 
 	SDL_DestroyWindow(screen);
