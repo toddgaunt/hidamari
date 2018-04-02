@@ -37,6 +37,7 @@ typedef enum {
 	HIDAMARI_TILE_S,
 	HIDAMARI_TILE_T,
 	HIDAMARI_TILE_Z,
+	HIDAMARI_TILE_WALL,
 	HIDAMARI_TILE_LAST, /* Not an actual tile, just used for enum length */
 } HidamariTile;
 
@@ -75,7 +76,7 @@ typedef struct {
 } HidamariBuffer;
 
 typedef struct {
-	Vec2 pos; /* Bottom-left position */
+	Vec2 pos; /* Top-left position */
 	HidamariShape shape : 4;
 	u8 orientation : 3;
 } Hidamari;
@@ -106,12 +107,14 @@ typedef struct {
 } HidamariState;
 
 typedef struct {
+	HidamariState s1;
+	HidamariState s2;
 	HidamariBuffer buf;
-	HidamariState old;
-	HidamariState new;
 	HidamariPlayField field;
 } HidamariGame;
 
+/* Note that for these coordinates, y starts at the top, not bottom.
+ * The vectors are organized as (x, y) pairs */
 static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 	{ /* 'I' */
 		/* - - - -
@@ -139,25 +142,25 @@ static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 		/* J - - 
 		   J J J 
 		   - - -*/
-		{VEC2(0, 1), VEC2(0, 2), VEC2(1, 1), VEC2(2, 1)},
+		{VEC2(0, 0), VEC2(0, 1), VEC2(1, 1), VEC2(2, 1)},
 		/* - J J 
 		   - J -
 		   - J -*/
-		{VEC2(1, 0), VEC2(1, 1), VEC2(1, 2), VEC2(2, 2)},
+		{VEC2(1, 0), VEC2(1, 1), VEC2(1, 2), VEC2(2, 0)},
 		/* - - - 
 		   J J J 
 		   - - J */
-		{VEC2(0, 1), VEC2(1, 1), VEC2(2, 0), VEC2(2, 1)},
+		{VEC2(0, 1), VEC2(1, 1), VEC2(2, 1), VEC2(2, 2)},
 		/* - J - 
 		   - J - 
 		   J J - */
-		{VEC2(0, 0), VEC2(1, 0), VEC2(1, 1), VEC2(1, 2)},
+		{VEC2(0, 2), VEC2(1, 0), VEC2(1, 1), VEC2(1, 2)},
 	},
 	{ /* 'L' */
 		/* - - L 
 		   L L L 
 		   - - - */
-		{VEC2(0, 1), VEC2(1, 1), VEC2(2, 1), VEC2(2, 2)},
+		{VEC2(0, 1), VEC2(1, 1), VEC2(2, 0), VEC2(2, 1)},
 		/* - L - 
 		   - L - 
 		   - L L*/
@@ -185,25 +188,25 @@ static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 		/* - S S 
 		   S S - 
 		   - - - */
-		{VEC2(0, 1), VEC2(1, 1), VEC2(1, 2), VEC2(2, 2)},
+		{VEC2(0, 1), VEC2(1, 0), VEC2(1, 1), VEC2(2, 0)},
 		/* - S - 
 		   - S S 
 		   - - S*/
-		{VEC2(1, 1), VEC2(1, 2), VEC2(2, 0), VEC2(2, 1)},
+		{VEC2(1, 1), VEC2(1, 2), VEC2(2, 1), VEC2(2, 2)},
 		/* - - -
 		   - S S 
 		   S S - */
-		{VEC2(0, 0), VEC2(1, 0), VEC2(1, 1), VEC2(2, 1)},
+		{VEC2(0, 2), VEC2(1, 1), VEC2(1, 2), VEC2(2, 1)},
 		/* S - - 
 		   S S - 
 		   - S - */
-		{VEC2(0, 1), VEC2(0, 2), VEC2(1, 0), VEC2(1, 1)},
+		{VEC2(0, 0), VEC2(0, 1), VEC2(1, 1), VEC2(1, 2)},
 	},
 	{ /* 'T' */
 		/* - T - 
 		   T T T 
 		   - - - */
-		{VEC2(0, 1), VEC2(1, 1), VEC2(1, 2), VEC2(2, 1)},
+		{VEC2(0, 1), VEC2(1, 0), VEC2(1, 1), VEC2(2, 1)},
 		/* - T - 
 		   - T T 
 		   - T -*/
@@ -211,7 +214,7 @@ static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 		/* - - -
 		   T T T 
 		   - T - */
-		{VEC2(0, 1), VEC2(1, 0), VEC2(1, 1), VEC2(2, 1)},
+		{VEC2(0, 1), VEC2(1, 1), VEC2(1, 2), VEC2(2, 1)},
 		/* - T - 
 		   T T - 
 		   - T - */
@@ -221,19 +224,19 @@ static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 		/* Z Z - 
 		   - Z Z 
 		   - - - */
-		{VEC2(0, 2), VEC2(1, 1), VEC2(1, 2), VEC2(2, 1)},
+		{VEC2(0, 0), VEC2(1, 0), VEC2(1, 1), VEC2(2, 1)},
 		/* - - Z 
 		   - Z Z 
 		   - Z -*/
-		{VEC2(1, 0), VEC2(1, 1), VEC2(2, 1), VEC2(2, 2)},
+		{VEC2(1, 1), VEC2(1, 2), VEC2(2, 0), VEC2(2, 1)},
 		/* - - -
 		   Z Z - 
 		   - Z Z*/
-		{VEC2(0, 1), VEC2(1, 0), VEC2(1, 1), VEC2(2, 0)},
+		{VEC2(0, 1), VEC2(1, 1), VEC2(1, 2), VEC2(2, 2)},
 		/* - Z - 
 		   Z Z - 
 		   Z - - */
-		{VEC2(0, 0), VEC2(0, 1), VEC2(1, 1), VEC2(1, 2)},
+		{VEC2(0, 1), VEC2(0, 2), VEC2(1, 0), VEC2(1, 1)},
 	},
 };
 
@@ -255,8 +258,5 @@ hidamari_update(HidamariGame *game, Button act);
 
 void
 hidamari_state_save(HidamariGame *game, u1 slot);
-
-void
-hidamari_buffer_draw(HidamariGame *game);
 
 #endif

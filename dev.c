@@ -32,9 +32,9 @@ dump_field(HidamariPlayField *field)
 		x = hidamari_orientation[field->current.shape]
 		                              [field->current.orientation]
 		                              [i].x + field->current.pos.x;
-		y = hidamari_orientation[field->current.shape]
+		y = field->current.pos.y - hidamari_orientation[field->current.shape]
 		                        [field->current.orientation]
-		                        [i].y + field->current.pos.y;
+		                        [i].y;
 		printf("x, y: %zu, %zu\n", x, y);
 		buf[x][y] = '$';
 	}
@@ -58,12 +58,9 @@ main()
 	ralloc_aquire(1024 << 10);
 	hidamari_init(&game);
 	game.field.grid[0] |= 7 << 1;
-	size_t i = 0;
-	while(i < 100000) {
-		//usleep(100000);
+	for (;;) {
+		usleep(100000);
+		dump_field(&game.field);
 		hidamari_update(&game, BUTTON_NONE);
-		i++;
 	}
-	hidamari_buffer_draw(&game);
-	dump_field(&game.field);
 }

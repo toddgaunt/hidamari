@@ -92,9 +92,10 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 		x = hidamari_orientation[field->current.shape]
 		                              [field->current.orientation]
 		                              [i].x + field->current.pos.x;
-		y = hidamari_orientation[field->current.shape]
-		                        [field->current.orientation]
-		                        [i].y + field->current.pos.y;
+		y = field->current.pos.y
+			- hidamari_orientation[field->current.shape]
+		                              [field->current.orientation]
+		                              [i].y;
 		if (y >= HIDAMARI_BUFFER_HEIGHT)
 			continue;
 		buf->tile[x][y] = HIDAMARI_TILE_I;
@@ -141,7 +142,7 @@ get_next_hidamari(HidamariPlayField *field)
 	field->current.shape = field->next;
 	field->current.orientation = 0;
 	field->current.pos.x = 10 / 2 - 1;
-	field->current.pos.y = HIDAMARI_HEIGHT - 3;
+	field->current.pos.y = HIDAMARI_HEIGHT;
 
 	if (field->bag_pos >= 7) {
 		r7system(field->bag);
@@ -159,8 +160,11 @@ is_collision(Hidamari const *t, u12 const grid[HIDAMARI_HEIGHT])
 	u12 x, y;
 
 	for (i = 0; i < 4; ++i) {
-		x = 1 << (hidamari_orientation[t->shape][t->orientation][i].x + t->pos.x);
-		y = hidamari_orientation[t->shape][t->orientation][i].y + t->pos.y;
+		x = 1 << (hidamari_orientation[t->shape]
+				[t->orientation][i].x + t->pos.x);
+		y = t->pos.y - hidamari_orientation[t->shape]
+		                                   [t->orientation]
+		                                   [i].y;
 		if (x & grid[y])
 			return true;
 	}
@@ -178,9 +182,10 @@ lock_current(HidamariPlayField *field)
 		x = 1 << (hidamari_orientation[field->current.shape]
 		                              [field->current.orientation]
 		                              [i].x + field->current.pos.x);
-		y = hidamari_orientation[field->current.shape]
-		                        [field->current.orientation]
-		                        [i].y + field->current.pos.y;
+		y = field->current.pos.y
+			- hidamari_orientation[field->current.shape]
+		                              [field->current.orientation]
+		                              [i].y;
 		field->grid[y] |= x;
 	}
 }
@@ -319,13 +324,45 @@ field_update(HidamariPlayField *field, Button act)
 }
 
 void
+save_state(HidamariState *ret, HidamariPlayField *field)
+{
+	ret->level = field->level;
+	ret->score = field->score;
+	ret->next = field->next;
+	ret->current = field->current;
+}
+
+void
 buffer_init(HidamariBuffer *buf)
 {
+	size_t x, y;
+
+	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
+		for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
+			buf->tile[x][y] = HIDAMARI_TILE_SPACE;
+		}
+	}
+
+	for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
+		buf->tile[0][y] = HIDAMARI_TILE_WALL;
+		buf->tile[HIDAMARI_BUFFER_WIDTH - 1][y] = HIDAMARI_TILE_WALL;
+	}
+
+	for (x = 1; x < HIDAMARI_BUFFER_WIDTH - 1; ++x) {
+		buf->tile[x][0] = HIDAMARI_TILE_WALL;
+	}
+}
+
+void
+buffer_update(HidamariBuffer *buf, HidamariState *s1, HidamariState *s2)
+{
+	
 }
 
 void
 hidamari_init(HidamariGame *game)
 {
+	memset(game, 0, sizeof(*game));
 	buffer_init(&game->buf);
 	field_init(&game->field);
 }
@@ -333,17 +370,9 @@ hidamari_init(HidamariGame *game)
 void
 hidamari_update(HidamariGame *game, Button act)
 {
+	save_state(&game->s1, &game->field);
 	field_update(&game->field, act);
-}
-
-void
-hidamari_state_save(HidamariGame *game, u1 slot)
-{
-	HidamariState *state = slot ? &game->new : &game->old;
-}
-
-void
-hidamari_buffer_draw(HidamariGame *game)
-{
+	save_state(&game->s2, &game->field);
+	buffer_update(&game->buf, &game->s1, &game->s2);
 	draw_field(&game->buf, &game->field);
 }

@@ -31,8 +31,8 @@ render(SDL_Renderer *renderer, SDL_Texture *texture, HidamariBuffer *buf)
 				continue;
 			dest_r.x = TILE_S * (HIDAMARI_BUFFER_WIDTH - 1 - i);
 			dest_r.y = TILE_S * j;
-			src_r.x = TILE_S * (tile % 14);
-			src_r.y = TILE_S * (tile / 14);
+			src_r.x = TILE_S * (tile % 16);
+			src_r.y = TILE_S * (tile / 16);
 			SDL_RenderCopy(renderer, texture, &src_r, &dest_r);
 		}
 	}
@@ -133,14 +133,11 @@ main()
 			}
 		}
 
-		hidamari_state_save(&game, 0);
 		while (acc >= dt) {
 			hidamari_update(&game, button);
 			acc -= dt;
 			button = BUTTON_NONE;
 		}
-		hidamari_state_save(&game, 1);
-		hidamari_buffer_draw(&game);
 		render(renderer, tileset_hw, &game.buf);
 	}
 
