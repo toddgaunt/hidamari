@@ -9,7 +9,7 @@
 #define HIDAMARI_HEIGHT 23
 #define HIDAMARI_WIDTH 12
 
-#define HIDAMARI_BUFFER_HEIGHT HIDAMARI_HEIGHT - 2
+#define HIDAMARI_BUFFER_HEIGHT (HIDAMARI_HEIGHT - 2)
 #define HIDAMARI_BUFFER_WIDTH HIDAMARI_WIDTH
 
 typedef enum {
@@ -164,11 +164,11 @@ static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 		/* - L - 
 		   - L - 
 		   - L L*/
-		{VEC2(1, 0), VEC2(1, 1), VEC2(1, 2), VEC2(2, 0)},
+		{VEC2(1, 0), VEC2(1, 1), VEC2(1, 2), VEC2(2, 2)},
 		/* - - -
 		   L L L
 		   L - - */
-		{VEC2(0, 0), VEC2(0, 1), VEC2(1, 1), VEC2(2, 1)},
+		{VEC2(0, 1), VEC2(0, 2), VEC2(1, 1), VEC2(2, 1)},
 		/* L L - 
 		   - L - 
 		   - L - */
