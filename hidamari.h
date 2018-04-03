@@ -172,7 +172,7 @@ static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 		/* L L - 
 		   - L - 
 		   - L - */
-		{VEC2(0, 2), VEC2(1, 0), VEC2(1, 1), VEC2(1, 2)},
+		{VEC2(0, 0), VEC2(1, 0), VEC2(1, 1), VEC2(1, 2)},
 	},
 	{ /* 'O' */
 		/* - - - -
