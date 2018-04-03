@@ -12,39 +12,17 @@
 #include "ralloc.h"
 
 static void
-dump_field(HidamariPlayField *field)
+dump_field(HidamariBuffer *buf)
 {
-	int i;
-	size_t x, y;
-	char buf[HIDAMARI_WIDTH][HIDAMARI_HEIGHT];
+	size_t y, x;
 
-	for (x = 0; x < HIDAMARI_WIDTH; ++x) {
-		for (y = 0; y < HIDAMARI_HEIGHT; ++y) {
-			if (field->grid[y] & 1 << x) {
-				buf[x][y] = '#';
+	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
+		for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
+			if (HIDAMARI_TILE_SPACE == buf->tile[x][y]) {
+				putc('.', stdout);
 			} else {
-				buf[x][y] = '.';
+				putc('#', stdout);
 			}
-		}
-	}
-	printf("shape: %d\n", field->current.shape);
-	printf("top-right: %d, %d\n",
-			field->current.pos.x,
-			field->current.pos.y);
-	for (i = 0; i < 4; ++i) {
-		x = hidamari_orientation[field->current.shape]
-		                              [field->current.orientation]
-		                              [i].x + field->current.pos.x;
-		y = field->current.pos.y - hidamari_orientation[field->current.shape]
-		                        [field->current.orientation]
-		                        [i].y;
-		printf("x, y: %zu, %zu\n", x, y);
-		buf[x][y] = '$';
-	}
-	printf("--\n");
-	for (x = 0; x < HIDAMARI_WIDTH; ++x) {
-		for (y = 0; y < HIDAMARI_HEIGHT; ++y) {
-			putc(buf[x][y], stdout);
 			putc(' ', stdout);
 		}
 		putc('\n', stdout);
@@ -63,7 +41,10 @@ main()
 	hidamari_init(&game);
 	game.field.grid[0] |= 7 << 1;
 	for (;;) {
-		dump_field(&game.field);
+		printf("top-right: %d, %d\n",
+				game.field.current.pos.x,
+				game.field.current.pos.y);
+		dump_field(&game.buf);
 		printf("Enter command\n");
 		switch(fgetc(stdin)) {
 		case 'a': button = BUTTON_LEFT; break;
