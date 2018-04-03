@@ -28,6 +28,9 @@ dump_field(HidamariPlayField *field)
 		}
 	}
 	printf("shape: %d\n", field->current.shape);
+	printf("top-right: %d, %d\n",
+			field->current.pos.x,
+			field->current.pos.y);
 	for (i = 0; i < 4; ++i) {
 		x = hidamari_orientation[field->current.shape]
 		                              [field->current.orientation]
@@ -54,13 +57,27 @@ main()
 {
 	HidamariGame game;
 
+	Button button;
 	srand(time(NULL));
 	ralloc_aquire(1024 << 10);
 	hidamari_init(&game);
 	game.field.grid[0] |= 7 << 1;
 	for (;;) {
-		usleep(100000);
 		dump_field(&game.field);
-		hidamari_update(&game, BUTTON_NONE);
+		printf("Enter command\n");
+		switch(fgetc(stdin)) {
+		case 'a': button = BUTTON_LEFT; break;
+		case 's': button = BUTTON_DOWN; break;
+		case 'd': button = BUTTON_RIGHT; break;
+		case 'w': button = BUTTON_UP; break;
+		case 'q': button = BUTTON_L; break;
+		case 'e': button = BUTTON_R; break;
+		case EOF: goto endgameloop;
+		default: button = BUTTON_NONE; break;
+		}
+		fgetc(stdin);
+		hidamari_update(&game, button);
 	}
+endgameloop:
+	return 0;
 }
