@@ -79,7 +79,7 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 	int i;
 	size_t x, y;
 
-	for (x = 0; x < HIDAMARI_WIDTH; ++x) {
+	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
 		for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
 			if (field->grid[y] & 1 << x) {
 				buf->tile[x][y] = HIDAMARI_TILE_I;
@@ -142,7 +142,7 @@ get_next_hidamari(HidamariPlayField *field)
 	field->current.shape = field->next;
 	field->current.orientation = 0;
 	field->current.pos.x = 10 / 2 - 1;
-	field->current.pos.y = HIDAMARI_HEIGHT;
+	field->current.pos.y = HIDAMARI_HEIGHT - 1;
 
 	if (field->bag_pos >= 7) {
 		r7system(field->bag);
@@ -157,15 +157,17 @@ static bool
 is_collision(Hidamari const *t, u12 const grid[HIDAMARI_HEIGHT])
 {
 	int i;
-	u12 x, y;
+	int x, y;
 
 	for (i = 0; i < 4; ++i) {
-		x = 1 << (hidamari_orientation[t->shape]
-				[t->orientation][i].x + t->pos.x);
+		x = hidamari_orientation[t->shape]
+				[t->orientation][i].x + t->pos.x;
 		y = t->pos.y - hidamari_orientation[t->shape]
 		                                   [t->orientation]
 		                                   [i].y;
-		if (x & grid[y])
+		if (y < 0 || y > HIDAMARI_HEIGHT - 1
+		|| x < 0 || x > HIDAMARI_WIDTH - 1
+		|| (1 << x) & grid[y])
 			return true;
 	}
 	return false;
