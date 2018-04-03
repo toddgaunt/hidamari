@@ -121,7 +121,6 @@ main()
 				case SDLK_LCTRL:
 					button = BUTTON_L;
 					break;
-				case SDLK_RETURN:
 				case SDLK_SPACE:
 					button = BUTTON_B;
 					break;
