@@ -98,17 +98,7 @@ typedef struct {
 	u12 grid[HIDAMARI_HEIGHT]; /* Represents static Hidamaries */
 } HidamariPlayField;
 
-/* State that is saved for the renderer */
 typedef struct {
-	u8 level;
-	u16 score;
-	HidamariShape next : 4;
-	Hidamari current;
-} HidamariState;
-
-typedef struct {
-	HidamariState s1;
-	HidamariState s2;
 	HidamariBuffer buf;
 	HidamariPlayField field;
 } HidamariGame;
