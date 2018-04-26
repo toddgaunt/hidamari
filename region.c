@@ -23,8 +23,9 @@ region_alloc(void *handle, size_t n)
 	void *ret;
 	Region *region = handle;
 
-	if (overflows(region->sp, n) || region->sp + n > region->size)
+	if (overflows(region->sp, n) || region->sp + n > region->size) {
 		return NULL;
+	}
 	ret = &region->mem[region->sp];
 	region->sp += n;
 	return ret;

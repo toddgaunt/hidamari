@@ -8,8 +8,9 @@
 #include <SDL2/SDL_image.h>
 #include <unistd.h>
 
+#include "ai.h"
 #include "hidamari.h"
-#include "ralloc.h"
+#include "region.h"
 
 #define TILE_S 16
 
@@ -54,8 +55,11 @@ main()
 	SDL_Event event;
 	dt = 1000 / 60; /* miliseconds / frames */
 	acc = 0.0;
-	bool keypress = true;
 	Button button = BUTTON_NONE;
+	void *region;
+	int ai_timer = 0;
+	Button bn = BUTTON_NONE;
+	Button *planstr = &bn;
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		return EXIT_FAILURE;
@@ -71,16 +75,18 @@ main()
 	if (NULL == renderer)
 		return 1;
 	/* Set window properties */
-	SDL_RenderSetLogicalSize(renderer, TILE_S * HIDAMARI_BUFFER_WIDTH, TILE_S * HIDAMARI_BUFFER_HEIGHT);
+	SDL_RenderSetLogicalSize(renderer, TILE_S * HIDAMARI_BUFFER_WIDTH,
+			TILE_S * HIDAMARI_BUFFER_HEIGHT);
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
 	/* Loads the texture map for the game */
 	SDL_Surface *tileset_sf = IMG_Load("res/tileset/default.png");
-	SDL_Texture *tileset_hw = SDL_CreateTextureFromSurface(renderer, tileset_sf);
+	SDL_Texture *tileset_hw = SDL_CreateTextureFromSurface(renderer,
+			tileset_sf);
 
 	srand(time(NULL));
-	ralloc_aquire(1024 << 10);
 	hidamari_init(&game);
-	while(keypress) {
+	region = region_create((1024 << 8) / 1.45);
+	for (;;) {
 		// Uncomment and change the number below to test lag!
 		//usleep(100000);
 		now = SDL_GetTicks();
@@ -89,9 +95,9 @@ main()
 		acc += frame_time;
 
 		while (SDL_PollEvent(&event)) {      
-			if (SDL_QUIT == event.type)
-				keypress = false;
 			switch (event.type) {
+			case SDL_QUIT:
+				goto endgame;
 			case SDL_KEYDOWN:
 				switch(event.key.keysym.sym) {
 				case SDLK_s:
@@ -133,13 +139,24 @@ main()
 		}
 
 		while (acc >= dt) {
-			hidamari_update(&game, button);
+			if (0 == ai_timer) {
+				if (BUTTON_NONE == planstr[0]) {
+					region_clear(region);
+					planstr = ai_plan(region, &game.field);
+				}
+				hidamari_update(&game, planstr[0]);
+				++planstr;
+			} else {
+				hidamari_update(&game, BUTTON_NONE);
+			}
+			//ai_timer = (ai_timer + 1) % ((rand() % (15 + 1 - 5)) + 5);
 			acc -= dt;
 			button = BUTTON_NONE;
 		}
 		render(renderer, tileset_hw, &game.buf);
 	}
-
+endgame:
+	region_destroy(region);
 	SDL_DestroyWindow(screen);
 	SDL_DestroyRenderer(renderer);
 }

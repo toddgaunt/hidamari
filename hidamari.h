@@ -41,7 +41,8 @@ typedef enum {
 	HIDAMARI_TILE_LAST, /* Not an actual tile, just used for enum length */
 } HidamariTile;
 
-typedef enum {
+typedef uint8_t Button;
+enum {
 	BUTTON_NONE = 0,
 	/* D-pad */
 	BUTTON_UP,
@@ -57,9 +58,10 @@ typedef enum {
 	BUTTON_X,
 	BUTTON_Y,
 	BUTTON_LAST, /* Not an actual action, just used for enum length */
-} Button;
+};
 
-typedef enum {
+typedef uint8_t HidamariShape;
+enum {
 	HIDAMARI_I,        
 	HIDAMARI_J,        
 	HIDAMARI_L,        
@@ -67,8 +69,9 @@ typedef enum {
 	HIDAMARI_S,        
 	HIDAMARI_T,        
 	HIDAMARI_Z,        
-	HIDAMARI_LAST, /* Not an actual piece, just used for enum length */
-} HidamariShape;
+	HIDAMARI_LAST, /* Not an actual piece, just used for enum length. Also
+			  can be used as a NULL value for hidamaris */
+};
 
 typedef struct {
 	char tile[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
@@ -81,14 +84,15 @@ typedef struct {
 	u8 orientation : 3;
 } Hidamari;
 
-typedef struct {
+typedef struct HidamariPlayField HidamariPlayField;
+struct HidamariPlayField {
 	/* Scoring */
 	u8 level;
 	u16 score; 
 	u16 lines; 
 	/* Timing */
 	f32 gravity_timer; 
-	u8 slide_timer;
+	u8 slide_timer : 4;
 	/* Randomization */
 	u4 bag_pos : 4; /* Current position in the bag */
 	HidamariShape bag[7]; /* Random Bag, used for pseudo-random order */
@@ -96,7 +100,7 @@ typedef struct {
 	HidamariShape next : 4; /* Lookahead piece for player */
 	Hidamari current;
 	u12 grid[HIDAMARI_HEIGHT]; /* Represents static Hidamaries */
-} HidamariPlayField;
+};
 
 typedef struct {
 	HidamariBuffer buf;
@@ -248,5 +252,11 @@ hidamari_update(HidamariGame *game, Button act);
 
 void
 hidamari_state_save(HidamariGame *game, u1 slot);
+
+void
+hidamari_field_init(HidamariPlayField *field);
+
+int
+hidamari_field_update(HidamariPlayField *field, Button act);
 
 #endif

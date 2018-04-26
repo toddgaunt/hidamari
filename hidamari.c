@@ -9,7 +9,6 @@
 #include "hashtable.h"
 #include "heap.h"
 #include "hidamari.h"
-#include "ralloc.h"
 #include "region.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -20,27 +19,6 @@ static u8 const slide_time = 15;
 
 static void
 r7system(HidamariShape bag[7]);
-static void
-field_init(HidamariPlayField *field);
-static int
-field_update(HidamariPlayField *field, Button act);
-
-
-static size_t
-field_hash(HidamariPlayField *a)
-{
-	return 0;
-}
-
-static int
-field_cmp(HidamariPlayField *a, HidamariPlayField *b)
-{
-	return 0;
-}
-
-HEAP_INSTANTIATE(heap, HidamariPlayField *, ralloc, field_cmp)
-HASHTABLE_INSTANTIATE(ht, HidamariPlayField *,  bool, ralloc, field_hash,
-		field_cmp)
 
 /* Gravity of the falling piece at certain levels */
 static f32 gravity_level[15] = {
@@ -82,7 +60,18 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
 		for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
 			if (field->grid[y] & 1 << x) {
-				buf->tile[x][y] = HIDAMARI_TILE_I;
+				buf->tile[x][y] = HIDAMARI_TILE_WALL;
+				if (0 == x
+				|| HIDAMARI_BUFFER_WIDTH - 1 == x
+				|| 0 == y) {
+					buf->color[x][y][0] = 100;
+					buf->color[x][y][1] = 100;
+					buf->color[x][y][2] = 100;
+				} else {
+					buf->color[x][y][0] = 178;
+					buf->color[x][y][1] = 178;
+					buf->color[x][y][2] = 178;
+				}
 			} else {
 				buf->tile[x][y] = HIDAMARI_TILE_SPACE;
 			}
@@ -98,7 +87,7 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 		                              [i].y;
 		if (y >= HIDAMARI_BUFFER_HEIGHT)
 			continue;
-		buf->tile[x][y] = HIDAMARI_TILE_I;
+		buf->tile[x][y] = HIDAMARI_TILE_SPACE + 1 + field->current.shape;
 	}
 }
 
@@ -175,20 +164,20 @@ is_collision(Hidamari const *t, u12 const grid[HIDAMARI_HEIGHT])
 
 /* Lock the current piece in place by copying it to the static piece grid */
 static void
-lock_current(HidamariPlayField *field)
+lock_hidamari(u12 recv[HIDAMARI_HEIGHT], Hidamari const *hidamari)
 {
 	int i;
 	u12 x, y;
 
 	for (i = 0; i < 4; ++i) {
-		x = 1 << (hidamari_orientation[field->current.shape]
-		                              [field->current.orientation]
-		                              [i].x + field->current.pos.x);
-		y = field->current.pos.y
-			- hidamari_orientation[field->current.shape]
-		                              [field->current.orientation]
+		x = 1 << (hidamari_orientation[hidamari->shape]
+		                              [hidamari->orientation]
+		                              [i].x + hidamari->pos.x);
+		y = hidamari->pos.y
+			- hidamari_orientation[hidamari->shape]
+		                              [hidamari->orientation]
 		                              [i].y;
-		field->grid[y] |= x;
+		recv[y] |= x;
 	}
 }
 
@@ -256,8 +245,8 @@ rotate_current(HidamariPlayField *field, Button dir)
 		field->current = tmp;
 }
 
-static void
-field_init(HidamariPlayField *field)
+void
+hidamari_field_init(HidamariPlayField *field)
 {
 	size_t i;
 
@@ -278,9 +267,11 @@ field_init(HidamariPlayField *field)
 	}
 }
 
-static int
-field_update(HidamariPlayField *field, Button act)
+int
+hidamari_field_update(HidamariPlayField *field, Button act)
 {
+	Hidamari tmp;
+
 	switch (act) {
 	case BUTTON_NONE:
 		break;
@@ -297,41 +288,35 @@ field_update(HidamariPlayField *field, Button act)
 		while (move_current(field, BUTTON_DOWN))
 			;
 		field->slide_timer = slide_time;
-		field->gravity_timer = drop_time;
+		field->gravity_timer = 0.0;
 		break;
 	default:
 		/* Don't perform any action for an illegal action */
 		break;
 	}
+
 	field->gravity_timer += gravity_level[field->level];
+	
 	/* If its not time for an update, then return early */
 	if (field->gravity_timer >= drop_time) {
-		if (move_current(field, BUTTON_DOWN)) {
-			field->gravity_timer = MAX(0.0, field->gravity_timer
-					- drop_time);
-		} else {
-			if (field->slide_timer < slide_time) {
-				field->slide_timer += 1;
-			} else {
-				lock_current(field);
-				clear_lines(field);
-				get_next_hidamari(field);
-				field->slide_timer = 0;
-				if (is_game_over(field))
-					return 1;
-			}
-		}
+		move_current(field, BUTTON_DOWN);
+		field->gravity_timer = 0.0;
+	}
+	tmp = field->current;
+	tmp.pos.y -= 1;
+	if (is_collision(&tmp, field->grid)) {
+		/* if (field->slide_timer < slide_time) { */
+		/* 	field->slide_timer += 1; */
+		/* } else { */
+			lock_hidamari(field->grid, &field->current);
+			clear_lines(field);
+			get_next_hidamari(field);
+			field->slide_timer = 0;
+			if (is_game_over(field))
+				return 1;
+		/* } */
 	}
 	return 0;
-}
-
-void
-save_state(HidamariState *ret, HidamariPlayField *field)
-{
-	ret->level = field->level;
-	ret->score = field->score;
-	ret->next = field->next;
-	ret->current = field->current;
 }
 
 void
@@ -356,25 +341,16 @@ buffer_init(HidamariBuffer *buf)
 }
 
 void
-buffer_update(HidamariBuffer *buf, HidamariState *s1, HidamariState *s2)
-{
-	
-}
-
-void
 hidamari_init(HidamariGame *game)
 {
 	memset(game, 0, sizeof(*game));
 	buffer_init(&game->buf);
-	field_init(&game->field);
+	hidamari_field_init(&game->field);
 }
 
 void
 hidamari_update(HidamariGame *game, Button act)
 {
-	save_state(&game->s1, &game->field);
-	field_update(&game->field, act);
-	save_state(&game->s2, &game->field);
-	buffer_update(&game->buf, &game->s1, &game->s2);
+	hidamari_field_update(&game->field, act);
 	draw_field(&game->buf, &game->field);
 }
