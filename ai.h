@@ -4,6 +4,27 @@
 
 #include "hidamari.h"
 
+typedef struct FieldNode FieldNode;
+struct FieldNode {
+	size_t g;
+	size_t n_action;
+	Button *action;
+	HidamariPlayField field;
+	FieldNode *parent;
+	FieldNode *next;
+};
+
+typedef struct AIContext AIContext;
+struct AIContext {
+	void *region;
+	FieldNode *stack;
+	FieldNode *goal;
+};
+
+/* Compute the minimum size of the region needed by ai_plan() */
+size_t
+ai_size_requirement();
+
 /* Perform a depth-first search on the state-space of tetris until exhaustion.
  * Each state that reaches the depth bound of DEPTH is evaluated, and compared
  * against the current best state. One the search completes, a plan is made for
@@ -17,7 +38,7 @@
  * Return: An array of button inputs devised by the AI in order to achieve
  *	at a desirable state.
  */
-Button *
+Button const *
 ai_plan(void *region, HidamariPlayField const *init);
 
 #endif

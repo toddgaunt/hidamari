@@ -35,7 +35,6 @@ int
 main()
 {
 	HidamariGame game;
-	Button button;
 	void *region;
 	Button bn = BUTTON_NONE;
 	Button *planstr = &bn;
@@ -48,18 +47,6 @@ main()
 				game.field.current.pos.x,
 				game.field.current.pos.y);
 		dump_field(&game.buf);
-		printf("Enter command\n");
-		switch(fgetc(stdin)) {
-		case 'a': button = BUTTON_LEFT; break;
-		case 's': button = BUTTON_DOWN; break;
-		case 'd': button = BUTTON_RIGHT; break;
-		case 'w': button = BUTTON_UP; break;
-		case 'q': button = BUTTON_L; break;
-		case 'e': button = BUTTON_R; break;
-		case EOF: goto endgameloop;
-		default: button = BUTTON_NONE; break;
-		}
-		fgetc(stdin);
 		if (BUTTON_NONE == planstr[0]) {
 			region_clear(region);
 			planstr = ai_plan(region, &game.field);
@@ -68,6 +55,5 @@ main()
 		++planstr;
 		//hidamari_update(&game, button);
 	}
-endgameloop:
 	return 0;
 }

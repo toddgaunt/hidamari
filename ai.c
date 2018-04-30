@@ -1,21 +1,14 @@
-#include <stdlib.h>
+#include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 	
+#include "ai.h"
 #include "hidamari.h"
 #include "region.h"
 
-#define DEPTH 2 
-
-typedef struct FieldNode FieldNode;
-struct FieldNode {
-	size_t g;
-	size_t n_action;
-	Button *action;
-	HidamariPlayField field;
-	FieldNode *parent;
-	FieldNode *next;
-};
+#define DEPTH 2
+#define DEPTH_IGNORED (DEPTH - DEPTH)
 
 FieldNode *
 create_node(void *region, HidamariPlayField const *init)
@@ -153,6 +146,16 @@ h3(FieldNode *np)
 	return score;
 }
 
+/* Heuristic 4: This is an optional heuristic. This heuristic optimizes for
+ * high scores, so it may lead to games that end prematurely due to choosing
+ * a higher score over a safer board
+ */
+static int
+h4(FieldNode *np)
+{
+	return np->parent->field.score - np->field.score;
+}
+
 /* Main evaluation function for a given state. Each of the heuristics
  * is multiplied by a certain weight depending on how valuable it is deemed.
  */
@@ -164,6 +167,7 @@ evaluate(FieldNode *np)
 	score += 3 * h1(np);
 	score += 2 * h2(np);
 	score += 10 * h3(np);
+	//score += h4(np);
 	return score;
 }
 
@@ -183,6 +187,9 @@ mkplan(void *region, FieldNode *goal)
 	size_t n_move = 0;
 	size_t i;
 
+	for (i = 0; i < DEPTH_IGNORED; ++i) {
+		goal = goal->parent;
+	}
 	for (fp = goal; fp->parent; fp = fp->parent) {
 		n_move += fp->n_action + 2;
 	}
@@ -199,8 +206,15 @@ mkplan(void *region, FieldNode *goal)
 	return planstr;
 }
 
+size_t
+ai_size_requirement()
+{
+	return pow(36, DEPTH) * (sizeof(FieldNode) + 10);
+}
+
 Button const *
 ai_plan(void *region, HidamariPlayField const *init) {
+	//AIContext context;
 	FieldNode *stack;
 	FieldNode *goal;
 	FieldNode *fp;

@@ -409,7 +409,7 @@ hidamari_init(HidamariGame *game)
 	memset(game, 0, sizeof(*game));
 	buffer_init(&game->buf);
 	hidamari_field_init(&game->field);
-	game->ai.region = region_create((1024 << 8) / 1.45);
+	game->ai.region = region_create(ai_size_requirement());
 	game->ai.planstr = &dbv;
 }
 
