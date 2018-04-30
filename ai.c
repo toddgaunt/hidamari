@@ -146,16 +146,6 @@ h3(FieldNode *np)
 	return score;
 }
 
-/* Heuristic 4: This is an optional heuristic. This heuristic optimizes for
- * high scores, so it may lead to games that end prematurely due to choosing
- * a higher score over a safer board
- */
-static int
-h4(FieldNode *np)
-{
-	return np->parent->field.score - np->field.score;
-}
-
 /* Main evaluation function for a given state. Each of the heuristics
  * is multiplied by a certain weight depending on how valuable it is deemed.
  */
@@ -167,7 +157,6 @@ evaluate(FieldNode *np)
 	score += 3 * h1(np);
 	score += 2 * h2(np);
 	score += 10 * h3(np);
-	//score += h4(np);
 	return score;
 }
 
@@ -213,28 +202,25 @@ ai_size_requirement()
 }
 
 Button const *
-ai_plan(void *region, HidamariPlayField const *init) {
-	//AIContext context;
-	FieldNode *stack;
-	FieldNode *goal;
+ai_plan(void *region, AIContext *context, HidamariPlayField const *init) {
 	FieldNode *fp;
 
-	stack = create_node(region, init);
-	goal = NULL;
-	while (stack) {
-		fp = stack;
-		stack = stack->next;
+	context->stack = create_node(region, init);
+	context->goal = NULL;
+	while (context->stack) {
+		fp = context->stack;
+		context->stack = context->stack->next;
 		if (DEPTH == fp->g) {
 			/* Evaluate the current goal state for "goodness" */
-			if (!goal) {
-				goal = fp;
-			} else if (evaluate(fp) < evaluate(goal)) {
-				goal = fp;
+			if (!context->goal) {
+				context->goal = fp;
+			} else if (evaluate(fp) < evaluate(context->goal)) {
+				context->goal = fp;
 			}
 		} else {
-			if (0 > expand(region, &stack, fp))
+			if (0 > expand(region, &context->stack, fp))
 				return NULL;
 		}
 	}
-	return mkplan(region, goal);
+	return mkplan(region, context->goal);
 }

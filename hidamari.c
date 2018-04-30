@@ -6,9 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ai.h"
 #include "hidamari.h"
 #include "region.h"
-#include "ai.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -409,19 +409,23 @@ hidamari_init(HidamariGame *game)
 	memset(game, 0, sizeof(*game));
 	buffer_init(&game->buf);
 	hidamari_field_init(&game->field);
-	game->ai.region = region_create(ai_size_requirement());
-	game->ai.planstr = &dbv;
+	game->region = region_create(ai_size_requirement());
+	game->context.planstr = &dbv;
 }
 
 void
 hidamari_update(HidamariGame *game, Button act)
 {
-	if (BUTTON_NONE == game->ai.planstr[0]) {
-		region_clear(game->ai.region);
-		game->ai.planstr = ai_plan(game->ai.region, &game->field);
+	if (BUTTON_NONE == game->context.planstr[0]) {
+		region_clear(game->region);
+		game->context.stack = NULL;
+		game->context.goal = NULL;
+		game->context.planstr = NULL;
+		game->context.planstr = ai_plan(game->region, &game->context,
+				&game->field);
 	}
-	hidamari_field_update(&game->field, game->ai.planstr[0]);
-	++game->ai.planstr;
+	hidamari_field_update(&game->field, game->context.planstr[0]);
+	++game->context.planstr;
 	//ai_timer = (ai_timer + 1) % ((rand() % (15 + 1 - 5)) + 5);
 	draw_field(&game->buf, &game->field);
 }

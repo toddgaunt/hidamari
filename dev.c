@@ -35,25 +35,15 @@ int
 main()
 {
 	HidamariGame game;
-	void *region;
-	Button bn = BUTTON_NONE;
-	Button *planstr = &bn;
 
 	srand(time(NULL));
 	hidamari_init(&game);
-	region = region_create(1024 << 14);
 	for (;;) {
 		printf("top-right: %d, %d\n",
 				game.field.current.pos.x,
 				game.field.current.pos.y);
 		dump_field(&game.buf);
-		if (BUTTON_NONE == planstr[0]) {
-			region_clear(region);
-			planstr = ai_plan(region, &game.field);
-		}
-		hidamari_update(&game, planstr[0]);
-		++planstr;
-		//hidamari_update(&game, button);
+		hidamari_update(&game, BUTTON_NONE);
 	}
 	return 0;
 }

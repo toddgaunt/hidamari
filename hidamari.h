@@ -106,9 +106,20 @@ struct HidamariPlayField {
 	u12 grid[HIDAMARI_HEIGHT]; /* Represents static Hidamaries */
 };
 
-typedef struct HidamariAIState HidamariAIState;
-struct HidamariAIState {
-	void *region;
+typedef struct FieldNode FieldNode;
+struct FieldNode {
+	size_t g;
+	size_t n_action;
+	Button *action;
+	HidamariPlayField field;
+	FieldNode *parent;
+	FieldNode *next;
+};
+
+typedef struct AIContext AIContext;
+struct AIContext {
+	FieldNode *stack;
+	FieldNode *goal;
 	Button const *planstr;
 };
 
@@ -116,7 +127,8 @@ typedef struct {
 	uint8_t state;
 	HidamariBuffer buf;
 	HidamariPlayField field;
-	HidamariAIState ai;
+	AIContext context;
+	void *region;
 } HidamariGame;
 
 /* Note that for these coordinates, y starts at the top, not bottom.
