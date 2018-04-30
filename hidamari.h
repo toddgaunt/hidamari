@@ -9,10 +9,14 @@
 #define HIDAMARI_HEIGHT 23
 #define HIDAMARI_WIDTH 12
 
-#define HIDAMARI_BUFFER_HEIGHT (HIDAMARI_HEIGHT - 2)
+#define HIDAMARI_HEIGHT_VISIBLE (HIDAMARI_HEIGHT - 3)
+#define HIDAMARI_WIDTH_VISIBLE (HIDAMARI_HEIGHT - 3)
+
+#define HIDAMARI_BUFFER_HEIGHT (HIDAMARI_HEIGHT_VISIBLE + 3)
 #define HIDAMARI_BUFFER_WIDTH HIDAMARI_WIDTH
 
-typedef enum {
+typedef uint8_t HidamariTile;
+enum {
 	HIDAMARI_TILE_0,
 	HIDAMARI_TILE_1,
 	HIDAMARI_TILE_2,
@@ -39,7 +43,7 @@ typedef enum {
 	HIDAMARI_TILE_Z,
 	HIDAMARI_TILE_WALL,
 	HIDAMARI_TILE_LAST, /* Not an actual tile, just used for enum length */
-} HidamariTile;
+};
 
 typedef uint8_t Button;
 enum {
@@ -102,9 +106,17 @@ struct HidamariPlayField {
 	u12 grid[HIDAMARI_HEIGHT]; /* Represents static Hidamaries */
 };
 
+typedef struct HidamariAIState HidamariAIState;
+struct HidamariAIState {
+	void *region;
+	Button const *planstr;
+};
+
 typedef struct {
+	uint8_t state;
 	HidamariBuffer buf;
 	HidamariPlayField field;
+	HidamariAIState ai;
 } HidamariGame;
 
 /* Note that for these coordinates, y starts at the top, not bottom.

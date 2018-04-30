@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 	
-#include "heap.h"
-#include "hashtable.h"
 #include "hidamari.h"
 #include "region.h"
 
@@ -90,12 +88,12 @@ expand(void *region, FieldNode **stackp, FieldNode *parent)
 /* Heuristic 1: Calculate the aggregate difference in height between all
  * columns.
  */
-static size_t
+static int
 h1(FieldNode *np)
 {
 	int top;
 	size_t i, j;
-	size_t score = 0;
+	int score = 0;
 	int heights[10];
 
 	for (i = 0; i < HIDAMARI_WIDTH - 1; ++i) {
@@ -113,12 +111,12 @@ h1(FieldNode *np)
 }
 
 /* Heuristic 2: Calculate the aggregate height of all columns. */
-static size_t
+static int
 h2(FieldNode *np)
 {
 	int top;
 	size_t i, j;
-	size_t score = 0;
+	int score = 0;
 
 	for (i = 2; i < (1 << (HIDAMARI_WIDTH - 1)); i <<= 1) {
 		for (j = 0; j < HIDAMARI_HEIGHT; ++j) {
@@ -134,12 +132,12 @@ h2(FieldNode *np)
 /* Heuristic 3: Calculate the number of holes on the field. A hole is defined
  * as any open space with a filled space above it in the same column.
  */
-static size_t
+static int
 h3(FieldNode *np)
 {
 	int cnt;
 	size_t i, j;
-	size_t score = 0;
+	int score = 0;
 
 	for (i = 0; i < HIDAMARI_WIDTH - 1; ++i) {
 		cnt = 0;
@@ -158,10 +156,10 @@ h3(FieldNode *np)
 /* Main evaluation function for a given state. Each of the heuristics
  * is multiplied by a certain weight depending on how valuable it is deemed.
  */
-static size_t
+static int
 evaluate(FieldNode *np)
 {
-	size_t score = 0;
+	int score = 0;
 
 	score += 3 * h1(np);
 	score += 2 * h2(np);
@@ -201,7 +199,7 @@ mkplan(void *region, FieldNode *goal)
 	return planstr;
 }
 
-Button *
+Button const *
 ai_plan(void *region, HidamariPlayField const *init) {
 	FieldNode *stack;
 	FieldNode *goal;

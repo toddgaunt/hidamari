@@ -6,13 +6,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "hashtable.h"
-#include "heap.h"
 #include "hidamari.h"
 #include "region.h"
+#include "ai.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
+
+enum {
+	GS_MENU,
+	GS_GAME,
+};
 
 static f32 const drop_time = 1.0;
 static u8 const slide_time = 15;
@@ -54,15 +58,28 @@ static char const hidamari_shape_char[HIDAMARI_LAST] =
 static void
 draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 {
-	int i;
+	size_t i;
 	size_t x, y;
+	HidamariTile score[HIDAMARI_WIDTH - 2 + 1];
 
-	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
-		for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
+	/* Draw the scoreboard */
+	snprintf((char *)score, sizeof(score) + 1, "%010d", field->score);
+	for (x = 1; x < HIDAMARI_WIDTH - 1; ++x) {
+		for (y = HIDAMARI_HEIGHT_VISIBLE; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
+			if (HIDAMARI_HEIGHT_VISIBLE + 1 == y) {
+				buf->tile[x][y] = score[x - 1] - 48;
+			} else {
+				buf->tile[x][y] = HIDAMARI_TILE_WALL;
+			}
+		}
+	}
+	/* Draw the playfield */
+	for (x = 0; x < HIDAMARI_WIDTH_VISIBLE; ++x) {
+		for (y = 0; y < HIDAMARI_HEIGHT_VISIBLE; ++y) {
 			if (field->grid[y] & 1 << x) {
 				buf->tile[x][y] = HIDAMARI_TILE_WALL;
 				if (0 == x
-				|| HIDAMARI_BUFFER_WIDTH - 1 == x
+				|| HIDAMARI_WIDTH - 1 == x
 				|| 0 == y) {
 					buf->color[x][y][0] = 100;
 					buf->color[x][y][1] = 100;
@@ -77,6 +94,7 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 			}
 		}
 	}
+	/* Draw the current piece */
 	for (i = 0; i < 4; ++i) {
 		x = hidamari_orientation[field->current.shape]
 		                              [field->current.orientation]
@@ -85,7 +103,7 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 			- hidamari_orientation[field->current.shape]
 		                              [field->current.orientation]
 		                              [i].y;
-		if (y >= HIDAMARI_BUFFER_HEIGHT)
+		if (y >= HIDAMARI_HEIGHT_VISIBLE)
 			continue;
 		buf->tile[x][y] = HIDAMARI_TILE_SPACE + 1 + field->current.shape;
 	}
@@ -106,13 +124,56 @@ static void
 clear_lines(HidamariPlayField *field)
 {
 	size_t y = 1;
+	size_t combo = 0;
 
 	while (y < HIDAMARI_HEIGHT) {
 		if (2046 == (field->grid[y] & 2046)) {
 			shift_lines(field, y);
+			combo += 1;
 		} else {
 			y += 1;
 		}
+	}
+
+	switch (combo) {
+	case 0:
+		break;
+	case 1:
+		field->score += 1;
+		break;
+	case 2:
+		field->score += 3;
+		break;
+	case 3:
+		field->score += 5;
+		break;
+	case 4:
+		field->score += 8;
+		break;
+	default:
+		field->score += 8;
+		break;
+	}
+
+	/* Temporary solution to leveling */
+	if (field->score <= 5) {
+		field->level = 0;
+	} else if (field->score <= 15) {
+		field->level = 1;
+	} else if (field->score <= 30) {
+		field->level = 2;
+	} else if (field->score <= 50) {
+		field->level = 3;
+	} else if (field->score <= 75) {
+		field->level = 4;
+	} else if (field->score <= 105) {
+		field->level = 5;
+	} else if (field->score <= 140) {
+		field->level = 6;
+	} else if (field->score <= 180) {
+		field->level = 7;
+	} else {
+		field->level = 8;
 	}
 }
 
@@ -288,7 +349,6 @@ hidamari_field_update(HidamariPlayField *field, Button act)
 		while (move_current(field, BUTTON_DOWN))
 			;
 		field->slide_timer = slide_time;
-		field->gravity_timer = 0.0;
 		break;
 	default:
 		/* Don't perform any action for an illegal action */
@@ -305,16 +365,16 @@ hidamari_field_update(HidamariPlayField *field, Button act)
 	tmp = field->current;
 	tmp.pos.y -= 1;
 	if (is_collision(&tmp, field->grid)) {
-		/* if (field->slide_timer < slide_time) { */
-		/* 	field->slide_timer += 1; */
-		/* } else { */
+		if (field->slide_timer < slide_time) {
+			field->slide_timer += 1;
+		} else {
 			lock_hidamari(field->grid, &field->current);
 			clear_lines(field);
 			get_next_hidamari(field);
 			field->slide_timer = 0;
 			if (is_game_over(field))
 				return 1;
-		/* } */
+		}
 	}
 	return 0;
 }
@@ -343,14 +403,25 @@ buffer_init(HidamariBuffer *buf)
 void
 hidamari_init(HidamariGame *game)
 {
+	static const Button dbv = BUTTON_NONE;
+
+	game->state = GS_GAME;
 	memset(game, 0, sizeof(*game));
 	buffer_init(&game->buf);
 	hidamari_field_init(&game->field);
+	game->ai.region = region_create((1024 << 8) / 1.45);
+	game->ai.planstr = &dbv;
 }
 
 void
 hidamari_update(HidamariGame *game, Button act)
 {
-	hidamari_field_update(&game->field, act);
+	if (BUTTON_NONE == game->ai.planstr[0]) {
+		region_clear(game->ai.region);
+		game->ai.planstr = ai_plan(game->ai.region, &game->field);
+	}
+	hidamari_field_update(&game->field, game->ai.planstr[0]);
+	++game->ai.planstr;
+	//ai_timer = (ai_timer + 1) % ((rand() % (15 + 1 - 5)) + 5);
 	draw_field(&game->buf, &game->field);
 }

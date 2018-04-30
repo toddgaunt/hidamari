@@ -56,10 +56,6 @@ main()
 	dt = 1000 / 60; /* miliseconds / frames */
 	acc = 0.0;
 	Button button = BUTTON_NONE;
-	void *region;
-	int ai_timer = 0;
-	Button bn = BUTTON_NONE;
-	Button *planstr = &bn;
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		return EXIT_FAILURE;
@@ -85,7 +81,6 @@ main()
 
 	srand(time(NULL));
 	hidamari_init(&game);
-	region = region_create((1024 << 8) / 1.45);
 	for (;;) {
 		// Uncomment and change the number below to test lag!
 		//usleep(100000);
@@ -94,69 +89,57 @@ main()
 		last = now;
 		acc += frame_time;
 
-		while (SDL_PollEvent(&event)) {      
-			switch (event.type) {
-			case SDL_QUIT:
-				goto endgame;
-			case SDL_KEYDOWN:
-				switch(event.key.keysym.sym) {
-				case SDLK_s:
-				case SDLK_k:
-				case SDLK_DOWN:
-					button = BUTTON_DOWN;
-					break;
-				case SDLK_d:
-				case SDLK_l:
-				case SDLK_RIGHT:
-					button = BUTTON_RIGHT;
-					break;
-				case SDLK_a:
-				case SDLK_j:
-				case SDLK_LEFT:
-					button = BUTTON_LEFT;
-					break;
-				case SDLK_e:
-				case SDLK_o:
-				case SDLK_UP:
-				case SDLK_x:
-					button = BUTTON_R;
-					break;
-				case SDLK_q:
-				case SDLK_u:
-				case SDLK_RCTRL:
-				case SDLK_LCTRL:
-					button = BUTTON_L;
-					break;
-				case SDLK_SPACE:
-					button = BUTTON_B;
-					break;
-				default:
-					button = BUTTON_NONE;
-					break;
-				}
-				break;
-			}
-		}
-
 		while (acc >= dt) {
-			if (0 == ai_timer) {
-				if (BUTTON_NONE == planstr[0]) {
-					region_clear(region);
-					planstr = ai_plan(region, &game.field);
+			while (SDL_PollEvent(&event)) {      
+				switch (event.type) {
+				case SDL_QUIT:
+					goto endgame;
+				case SDL_KEYDOWN:
+					switch(event.key.keysym.sym) {
+					case SDLK_s:
+					case SDLK_k:
+					case SDLK_DOWN:
+						button = BUTTON_DOWN;
+						break;
+					case SDLK_d:
+					case SDLK_l:
+					case SDLK_RIGHT:
+						button = BUTTON_RIGHT;
+						break;
+					case SDLK_a:
+					case SDLK_j:
+					case SDLK_LEFT:
+						button = BUTTON_LEFT;
+						break;
+					case SDLK_e:
+					case SDLK_o:
+					case SDLK_UP:
+					case SDLK_x:
+						button = BUTTON_R;
+						break;
+					case SDLK_q:
+					case SDLK_u:
+					case SDLK_RCTRL:
+					case SDLK_LCTRL:
+						button = BUTTON_L;
+						break;
+					case SDLK_SPACE:
+						button = BUTTON_B;
+						break;
+					default:
+						button = BUTTON_NONE;
+						break;
+					}
+					break;
 				}
-				hidamari_update(&game, planstr[0]);
-				++planstr;
-			} else {
-				hidamari_update(&game, BUTTON_NONE);
 			}
-			//ai_timer = (ai_timer + 1) % ((rand() % (15 + 1 - 5)) + 5);
+			hidamari_update(&game, button);
 			acc -= dt;
 			button = BUTTON_NONE;
 		}
 		render(renderer, tileset_hw, &game.buf);
 	}
 endgame:
-	region_destroy(region);
 	SDL_DestroyWindow(screen);
 	SDL_DestroyRenderer(renderer);
 }
