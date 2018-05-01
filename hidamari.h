@@ -104,8 +104,8 @@ typedef struct HidamariPlayField HidamariPlayField;
 struct HidamariPlayField {
 	/* Scoring */
 	u8 level;
-	u16 score; 
-	u16 lines; 
+	usize score; 
+	usize lines; 
 	/* Timing */
 	f32 gravity_timer; 
 	u8 slide_timer : 4;

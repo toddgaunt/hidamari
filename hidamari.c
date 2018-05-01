@@ -301,6 +301,7 @@ clear_lines(HidamariPlayField *field)
 {
 	size_t y = 1;
 	size_t combo = 0;
+	size_t score;
 
 	while (y < HIDAMARI_HEIGHT) {
 		if (2046 == (field->grid[y] & 2046)) {
@@ -310,25 +311,32 @@ clear_lines(HidamariPlayField *field)
 			y += 1;
 		}
 	}
-
+	
 	switch (combo) {
 	case 0:
+		score = 0;
 		break;
 	case 1:
-		field->score += 1;
+		score = 1;
 		break;
 	case 2:
-		field->score += 3;
+		score = 3;
 		break;
 	case 3:
-		field->score += 5;
+		score = 5;
 		break;
 	case 4:
-		field->score += 8;
+		score = 8;
 		break;
 	default:
-		field->score += 8;
+		score = 8;
 		break;
+	}
+
+	if (field->score > SIZE_MAX - score) {
+		field->score = SIZE_MAX;
+	} else {
+		field->score += score;
 	}
 
 	/* Temporary solution to leveling */
