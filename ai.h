@@ -4,6 +4,12 @@
 
 #include "hidamari.h"
 
+enum {
+	AI_THREAD_START,
+	AI_THREAD_DONE,
+	AI_THREAD_TERMINATE,
+};
+
 typedef struct FieldNode FieldNode;
 struct FieldNode {
 	size_t g;
@@ -17,6 +23,10 @@ struct FieldNode {
 /* Compute the minimum size of the region needed by ai_plan() */
 size_t
 ai_size_requirement();
+
+/* Function to be used by pthreads */
+void *
+ai_thread_work(void *arg);
 
 /* Perform a depth-first search on the state-space of tetris until exhaustion.
  * Each state that reaches the depth bound of DEPTH is evaluated, and compared

@@ -16,12 +16,6 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-enum {
-	GS_MENU,
-	GS_GAME_PLAYING,
-	GS_GAME_OVER,
-};
-
 static f32 const drop_time = 1.0;
 static u8 const slide_time = 15;
 
@@ -560,20 +554,9 @@ buffer_init(HidamariBuffer *buf)
 	}
 }
 
-static inline void *
-ai_thread_work(void *arg)
-{
-	HidamariGame *game = arg;
-	double weight[3] = {3, 2, 10};
-
-	for (;;) {
-		sem_wait(&game->ai.sem_make_plan);
-		game->ai.next_planstr = ai_plan(game->ai.region, weight,
-				&game->field);
-		atomic_store(&game->ai.plan_is_ready, true);
-	}
-	return NULL;
-}
+/*
+ * Public API
+ */
 
 void
 hidamari_init(HidamariGame *game)
@@ -583,30 +566,54 @@ hidamari_init(HidamariGame *game)
 	buffer_init(&game->buf);
 	hidamari_field_init(&game->field);
 	game->ai.region = region_create(ai_size_requirement());
-	game->ai.planstr = NULL;
-	atomic_init(&game->ai.plan_is_ready, false);
-	sem_init(&game->ai.sem_make_plan, 0, 1);
-	pthread_create(&game->ai.thread, NULL, ai_thread_work, game);
+	game->ai.planstr = "";
 }
 
 void
 hidamari_update(HidamariGame *game, Button act)
 {
-	Button action = BUTTON_NONE;
+	/* Button action = BUTTON_NONE; */
 
-	if (game->ai.planstr && BUTTON_NONE != game->ai.planstr[0]) {
-		action = game->ai.planstr[0];
-		++game->ai.planstr;
-	} else if (game->ai.planstr && BUTTON_NONE == game->ai.planstr[0]) {
-		sem_post(&game->ai.sem_make_plan);
-		game->ai.planstr = NULL;
-	} else if (atomic_load(&game->ai.plan_is_ready)) {
-		game->ai.planstr = game->ai.next_planstr;
-		region_clear(game->ai.region);
-		atomic_store(&game->ai.plan_is_ready, false);
+	/* switch (game->state) { */
+	/* case GS_MENU: */
+	/* 	break; */
+	/* case GS_GAME_PLAYING: */
+	/* 	if (game->ai.planstr && BUTTON_NONE != game->ai.planstr[0]) { */
+	/* 		action = game->ai.planstr[0]; */
+	/* 		++game->ai.planstr; */
+	/* 	} else if (game->ai.planstr && BUTTON_NONE == game->ai.planstr[0]) { */
+	/* 		sem_post(&game->ai.sem_make_plan); */
+	/* 		game->ai.planstr = NULL; */
+	/* 	} else if (AI_THREAD_DONE == atomic_load(&game->ai.msg)) { */
+	/* 		game->ai.planstr = game->ai.next_planstr; */
+	/* 		region_clear(game->ai.region); */
+	/* 		atomic_store(&game->ai.msg, AI_THREAD_START); */
+	/* 	} */
+	/* 	//ai_timer = (ai_timer + 1) % ((rand() % (15 + 1 - 5)) + 5); */
+	/* 	if (0 != hidamari_field_update(&game->field, action)) { */
+	/* 		game->state = GS_GAME_OVER; */
+	/* 		atomic_store(&game->ai.msg, AI_THREAD_TERMINATE); */
+	/* 		sem_post(&game->ai.sem_make_plan); */
+	/* 		pthread_join(game->ai.thread, NULL); */
+	/* 		region_destroy(game->ai.region); */
+	/* 	} */
+	/* 	break; */
+	/* case GS_GAME_OVER: */
+	/* 	break; */
+	/* } */
+	/* draw_field(&game->buf, &game->field); */
+}
+
+void
+hidamari_pso_update(HidamariGame *game, double weight[3])
+{
+	game->ai.region = region_create(ai_size_requirement());
+	if (game->ai.planstr[0] == BUTTON_NONE) {
+		game->ai.planstr = ai_plan(game->ai.region, weight, &game->field);
 	}
-	if (0 != hidamari_field_update(&game->field, action))
+	if (0 != hidamari_field_update(&game->field, game->ai.planstr[0])) {
 		game->state = GS_GAME_OVER;
-	//ai_timer = (ai_timer + 1) % ((rand() % (15 + 1 - 5)) + 5);
+	}
+	++game->ai.planstr;
 	draw_field(&game->buf, &game->field);
 }

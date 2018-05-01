@@ -19,6 +19,14 @@
 #define HIDAMARI_BUFFER_HEIGHT (HIDAMARI_HEIGHT_VISIBLE + 3 + 3)
 #define HIDAMARI_BUFFER_WIDTH HIDAMARI_WIDTH
 
+/* Current state of the game */
+typedef uint8_t HidamariGameState;
+enum {
+	GS_MENU,
+	GS_GAME_PLAYING,
+	GS_GAME_OVER,
+};
+
 typedef uint8_t Button;
 enum {
 	BUTTON_NONE = 0,
@@ -110,22 +118,17 @@ struct HidamariPlayField {
 	u12 grid[HIDAMARI_HEIGHT]; /* Represents static Hidamaries */
 };
 
-typedef struct AIState AIState;
-struct AIState {
+typedef struct HidamariAIState HidamariAIState;
+struct HidamariAIState {
 	void *region;
 	Button const *planstr;
-	/* Synchronization stuff */
-	pthread_t thread;
-	Button const *next_planstr;
-	atomic_bool plan_is_ready;
-	sem_t sem_make_plan;
 };
 
 typedef struct {
-	uint8_t state;
+	HidamariGameState state;
 	HidamariBuffer buf;
 	HidamariPlayField field;
-	AIState ai;
+	HidamariAIState ai;
 } HidamariGame;
 
 /* Initialize the playfield, and allocate the global region used by all

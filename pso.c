@@ -9,6 +9,9 @@
 #include "region.h"
 #include "ai.h"
 
+void
+hidamari_pso_update(HidamariGame *game, double weight[3]);
+
 static void
 dump_field(HidamariBuffer const *buf)
 {
@@ -28,19 +31,24 @@ dump_field(HidamariBuffer const *buf)
 	printf("--\n");
 }
 
+size_t
+fitness(HidamariGame *game)
+{
+	double weight[3] = {3, 2, 10};
+	hidamari_init(game);
+	do {
+		hidamari_pso_update(game, weight);
+		dump_field(&game->buf);
+	} while (game->state == GS_GAME_PLAYING);
+	return game->field.score;
+}
+
 int
 main()
 {
 	HidamariGame game;
 
 	srand(time(NULL));
-	hidamari_init(&game);
-	for (;;) {
-		printf("top-right: %d, %d\n",
-				game.field.current.pos.x,
-				game.field.current.pos.y);
-		dump_field(&game.buf);
-		hidamari_update(&game, BUTTON_NONE);
-	}
+	fitness(&game);
 	return 0;
 }
