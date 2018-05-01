@@ -18,7 +18,8 @@
 
 enum {
 	GS_MENU,
-	GS_GAME,
+	GS_GAME_PLAYING,
+	GS_GAME_OVER,
 };
 
 static f32 const drop_time = 1.0;
@@ -578,7 +579,7 @@ void
 hidamari_init(HidamariGame *game)
 {
 	memset(game, 0, sizeof(*game));
-	game->state = GS_GAME;
+	game->state = GS_GAME_PLAYING;
 	buffer_init(&game->buf);
 	hidamari_field_init(&game->field);
 	game->ai.region = region_create(ai_size_requirement());
@@ -604,7 +605,8 @@ hidamari_update(HidamariGame *game, Button act)
 		region_clear(game->ai.region);
 		atomic_store(&game->ai.plan_is_ready, false);
 	}
-	hidamari_field_update(&game->field, action);
+	if (0 != hidamari_field_update(&game->field, action))
+		game->state = GS_GAME_OVER;
 	//ai_timer = (ai_timer + 1) % ((rand() % (15 + 1 - 5)) + 5);
 	draw_field(&game->buf, &game->field);
 }
