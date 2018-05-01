@@ -187,13 +187,11 @@ mkplan(void *region, FieldNode *goal)
 		goal = goal->parent;
 	}
 	for (fp = goal; fp->parent; fp = fp->parent) {
-		n_move += fp->n_action + 2;
+		n_move += fp->n_action;
 	}
 	planstr = region_alloc(region, n_move + 1);
 	planstr[n_move--] = BUTTON_NONE;
 	for (fp = goal; fp; fp = fp->parent) {
-		planstr[n_move--] = BUTTON_DOWN;
-		planstr[n_move--] = BUTTON_DOWN;
 		for (i = 0; i < fp->n_action; ++i) {
 			planstr[n_move - i] = fp->action[fp->n_action - i - 1];
 		}
@@ -232,7 +230,7 @@ ai_plan(void *region, HidamariPlayField const *init) {
 			if (goal && fp->g == DEPTH_ACTUAL && evaluate(goal) < evaluate(fp))
 				continue;
 			if (0 > expand(region, &stack, fp))
-				return NULL;
+				fprintf(stderr, "error: Ran out of memory during AI planning");
 		}
 	}
 	return mkplan(region, goal);
