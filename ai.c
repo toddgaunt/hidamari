@@ -15,7 +15,7 @@ hidamari_field_init(HidamariPlayField *field);
 int
 hidamari_field_update(HidamariPlayField *field, Button act);
 
-
+/* Allocate a new node with a copy of _init_ as its state */
 FieldNode *
 create_node(void *region, HidamariPlayField const *init)
 {
@@ -29,6 +29,9 @@ create_node(void *region, HidamariPlayField const *init)
 	return ret;
 }
 
+/* Derive a new state node from a parent node. The child will reflect
+ * the state of the parent after taking _n_action_ actions.
+ */
 int
 derive(void *region, FieldNode **stackp, FieldNode *parent,
 		size_t n_action, Button *action)
@@ -161,8 +164,8 @@ evaluate(FieldNode *np, double weight[3])
 	int score = 0;
 
 	score += weight[0] * h1(np);
-	score += weight[2] * h2(np);
-	score += weight[3] * h3(np);
+	score += weight[1] * h2(np);
+	score += weight[2] * h3(np);
 	return score;
 }
 
@@ -221,8 +224,10 @@ ai_plan(void *region, double weight[3], HidamariPlayField const *init) {
 				goal = fp;
 			}
 		} else {
-			if (0 > expand(region, &stack, fp))
+			if (0 > expand(region, &stack, fp)) {
 				fprintf(stderr, "error: Ran out of memory during AI planning");
+				exit(1);
+			}
 		}
 	}
 	return mkplan(region, goal);

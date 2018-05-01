@@ -58,6 +58,133 @@ static char const hidamari_shape_char[HIDAMARI_LAST] =
 	'Z',
 };
 
+/* Note that for these coordinates, y starts at the top, not bottom.
+ * The vectors are organized as (x, y) pairs */
+static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
+	{ /* 'I' */
+		/* - - - -
+		   I I I I 
+		   - - - - 
+		   - - - - */
+		{VEC2(0, 1), VEC2(1, 1), VEC2(2, 1), VEC2(3, 1)},
+		/* - - I -
+		   - - I - 
+		   - - I - 
+		   - - I - */
+		{VEC2(2, 0), VEC2(2, 1), VEC2(2, 2), VEC2(2, 3)},
+		/* - - - -
+		   - - - - 
+		   I I I I 
+		   - - - - */
+		{VEC2(0, 2), VEC2(1, 2), VEC2(2, 2), VEC2(3, 2)},
+		/* - I - -
+		   - I - - 
+		   - I - - 
+		   - I - - */
+		{VEC2(1, 0), VEC2(1, 1), VEC2(1, 2), VEC2(1, 3)},
+	}, 
+	{ /* 'J' */
+		/* J - - 
+		   J J J 
+		   - - -*/
+		{VEC2(0, 0), VEC2(0, 1), VEC2(1, 1), VEC2(2, 1)},
+		/* - J J 
+		   - J -
+		   - J -*/
+		{VEC2(1, 0), VEC2(1, 1), VEC2(1, 2), VEC2(2, 0)},
+		/* - - - 
+		   J J J 
+		   - - J */
+		{VEC2(0, 1), VEC2(1, 1), VEC2(2, 1), VEC2(2, 2)},
+		/* - J - 
+		   - J - 
+		   J J - */
+		{VEC2(0, 2), VEC2(1, 0), VEC2(1, 1), VEC2(1, 2)},
+	},
+	{ /* 'L' */
+		/* - - L 
+		   L L L 
+		   - - - */
+		{VEC2(0, 1), VEC2(1, 1), VEC2(2, 0), VEC2(2, 1)},
+		/* - L - 
+		   - L - 
+		   - L L*/
+		{VEC2(1, 0), VEC2(1, 1), VEC2(1, 2), VEC2(2, 2)},
+		/* - - -
+		   L L L
+		   L - - */
+		{VEC2(0, 1), VEC2(0, 2), VEC2(1, 1), VEC2(2, 1)},
+		/* L L - 
+		   - L - 
+		   - L - */
+		{VEC2(0, 0), VEC2(1, 0), VEC2(1, 1), VEC2(1, 2)},
+	},
+	{ /* 'O' */
+		/* - - - -
+		   - O O - 
+		   - O O - 
+		   - - - - */
+		{VEC2(1, 1), VEC2(1, 2), VEC2(2, 1), VEC2(2, 2)},
+		{VEC2(1, 1), VEC2(1, 2), VEC2(2, 1), VEC2(2, 2)},
+		{VEC2(1, 1), VEC2(1, 2), VEC2(2, 1), VEC2(2, 2)},
+		{VEC2(1, 1), VEC2(1, 2), VEC2(2, 1), VEC2(2, 2)},
+	}, 
+	{ /* 'S' */
+		/* - S S 
+		   S S - 
+		   - - - */
+		{VEC2(0, 1), VEC2(1, 0), VEC2(1, 1), VEC2(2, 0)},
+		/* - S - 
+		   - S S 
+		   - - S*/
+		{VEC2(1, 0), VEC2(1, 1), VEC2(2, 1), VEC2(2, 2)},
+		/* - - -
+		   - S S 
+		   S S - */
+		{VEC2(0, 2), VEC2(1, 1), VEC2(1, 2), VEC2(2, 1)},
+		/* S - - 
+		   S S - 
+		   - S - */
+		{VEC2(0, 0), VEC2(0, 1), VEC2(1, 1), VEC2(1, 2)},
+	},
+	{ /* 'T' */
+		/* - T - 
+		   T T T 
+		   - - - */
+		{VEC2(0, 1), VEC2(1, 0), VEC2(1, 1), VEC2(2, 1)},
+		/* - T - 
+		   - T T 
+		   - T -*/
+		{VEC2(1, 0), VEC2(1, 1), VEC2(1, 2), VEC2(2, 1)},
+		/* - - -
+		   T T T 
+		   - T - */
+		{VEC2(0, 1), VEC2(1, 1), VEC2(1, 2), VEC2(2, 1)},
+		/* - T - 
+		   T T - 
+		   - T - */
+		{VEC2(0, 1), VEC2(1, 0), VEC2(1, 1), VEC2(1, 2)},
+	},
+	{ /* 'Z' */
+		/* Z Z - 
+		   - Z Z 
+		   - - - */
+		{VEC2(0, 0), VEC2(1, 0), VEC2(1, 1), VEC2(2, 1)},
+		/* - - Z 
+		   - Z Z 
+		   - Z -*/
+		{VEC2(1, 1), VEC2(1, 2), VEC2(2, 0), VEC2(2, 1)},
+		/* - - -
+		   Z Z - 
+		   - Z Z*/
+		{VEC2(0, 1), VEC2(1, 1), VEC2(1, 2), VEC2(2, 2)},
+		/* - Z - 
+		   Z Z - 
+		   Z - - */
+		{VEC2(0, 1), VEC2(0, 2), VEC2(1, 0), VEC2(1, 1)},
+	},
+};
+
 static void
 draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 {
