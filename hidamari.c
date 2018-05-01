@@ -333,8 +333,8 @@ clear_lines(HidamariPlayField *field)
 		break;
 	}
 
-	if (field->score > SIZE_MAX - score) {
-		field->score = SIZE_MAX;
+	if (field->score > UINT32_MAX - score) {
+		field->score = UINT32_MAX;
 	} else {
 		field->score += score;
 	}
