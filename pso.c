@@ -113,7 +113,6 @@ pso_work(void *arg)
 		for (i = 0; i < 3; ++i) {
 			rp = (double)rfrange(1, 100) / 100.0;
 			rg = (double)rfrange(1, 100) / 100.0;
-			printf("rp: %f\n", rp);
 			/* The magical velocity formula */
 			pi->velocity[i] = phi * pi->velocity[i]
 				+ alpha * rp * (pi->best_weight[i]
