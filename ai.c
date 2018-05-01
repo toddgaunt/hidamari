@@ -205,24 +205,6 @@ ai_size_requirement()
 	return pow(36, DEPTH) * (sizeof(FieldNode) + 10);
 }
 
-void *
-ai_thread_work(void *arg)
-{
-	HidamariGame *game = arg;
-	//double weight[3] = {3, 2, 10};
-	double weight[3] = {0, 0, 0};
-
-	/* for (;;) { */
-	/* 	sem_wait(&game->ai.sem_make_plan); */
-	/* 	if (AI_THREAD_TERMINATE == atomic_load(&game->ai.msg)) */
-	/* 		break; */
-	/* 	game->ai.next_planstr = ai_plan(game->ai.region, weight, */
-	/* 			&game->field); */
-	/* 	atomic_store(&game->ai.msg, AI_THREAD_DONE); */
-	/* } */
-	return NULL;
-}
-
 Button const *
 ai_plan(void *region, double weight[3], HidamariPlayField const *init) {
 	FieldNode *stack;

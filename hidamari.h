@@ -147,4 +147,10 @@ hidamari_init(HidamariGame *game);
 void
 hidamari_update(HidamariGame *game, Button act);
 
+/* An alternative update function with no visuals for particle-swarm
+ * optimization, or simulation without the overhead of visualization.
+ * The weights of the AI heuristics can be provided. */
+void
+hidamari_pso_update(HidamariGame *game, double weight[3]);
+
 #endif

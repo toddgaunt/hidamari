@@ -53,8 +53,9 @@ static char const hidamari_shape_char[HIDAMARI_LAST] =
 	'Z',
 };
 
-/* Note that for these coordinates, y starts at the top, not bottom.
- * The vectors are organized as (x, y) pairs */
+/* The different orientations of each hidamari. Note that for these
+ * coordinates, y starts at the top of the matrix, not bottom. The vectors are
+ * organized as (x, y) pairs */
 static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 	{ /* 'I' */
 		/* - - - -
@@ -181,7 +182,28 @@ static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 };
 
 static void
-draw_field(HidamariBuffer *buf, HidamariPlayField *field)
+buffer_init(HidamariBuffer *buf)
+{
+	size_t x, y;
+
+	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
+		for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
+			buf->tile[x][y] = HIDAMARI_TILE_SPACE;
+		}
+	}
+
+	for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
+		buf->tile[0][y] = HIDAMARI_TILE_WALL;
+		buf->tile[HIDAMARI_BUFFER_WIDTH - 1][y] = HIDAMARI_TILE_WALL;
+	}
+
+	for (x = 1; x < HIDAMARI_BUFFER_WIDTH - 1; ++x) {
+		buf->tile[x][0] = HIDAMARI_TILE_WALL;
+	}
+}
+
+static void
+buffer_draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 {
 	size_t i;
 	size_t x, y;
@@ -533,27 +555,6 @@ hidamari_field_update(HidamariPlayField *field, Button act)
 	return 0;
 }
 
-static void
-buffer_init(HidamariBuffer *buf)
-{
-	size_t x, y;
-
-	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
-		for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
-			buf->tile[x][y] = HIDAMARI_TILE_SPACE;
-		}
-	}
-
-	for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
-		buf->tile[0][y] = HIDAMARI_TILE_WALL;
-		buf->tile[HIDAMARI_BUFFER_WIDTH - 1][y] = HIDAMARI_TILE_WALL;
-	}
-
-	for (x = 1; x < HIDAMARI_BUFFER_WIDTH - 1; ++x) {
-		buf->tile[x][0] = HIDAMARI_TILE_WALL;
-	}
-}
-
 /*
  * Public API
  */
@@ -561,59 +562,78 @@ buffer_init(HidamariBuffer *buf)
 void
 hidamari_init(HidamariGame *game)
 {
+	static Button const dbv = BUTTON_NONE;
+
 	memset(game, 0, sizeof(*game));
 	game->state = GS_GAME_PLAYING;
 	buffer_init(&game->buf);
 	hidamari_field_init(&game->field);
 	game->ai.region = region_create(ai_size_requirement());
-	game->ai.planstr = "";
+	game->ai.planstr = &dbv;
 }
 
-void
-hidamari_update(HidamariGame *game, Button act)
-{
-	/* Button action = BUTTON_NONE; */
+/* void * */
+/* ai_thread_work(void *arg) */
+/* { */
+/* 	HidamariGame *game = arg; */
+/* 	//double weight[3] = {3, 2, 10}; */
+/* 	double weight[3] = {0, 0, 0}; */
 
-	/* switch (game->state) { */
-	/* case GS_MENU: */
-	/* 	break; */
-	/* case GS_GAME_PLAYING: */
-	/* 	if (game->ai.planstr && BUTTON_NONE != game->ai.planstr[0]) { */
-	/* 		action = game->ai.planstr[0]; */
-	/* 		++game->ai.planstr; */
-	/* 	} else if (game->ai.planstr && BUTTON_NONE == game->ai.planstr[0]) { */
-	/* 		sem_post(&game->ai.sem_make_plan); */
-	/* 		game->ai.planstr = NULL; */
-	/* 	} else if (AI_THREAD_DONE == atomic_load(&game->ai.msg)) { */
-	/* 		game->ai.planstr = game->ai.next_planstr; */
-	/* 		region_clear(game->ai.region); */
-	/* 		atomic_store(&game->ai.msg, AI_THREAD_START); */
-	/* 	} */
-	/* 	//ai_timer = (ai_timer + 1) % ((rand() % (15 + 1 - 5)) + 5); */
-	/* 	if (0 != hidamari_field_update(&game->field, action)) { */
-	/* 		game->state = GS_GAME_OVER; */
-	/* 		atomic_store(&game->ai.msg, AI_THREAD_TERMINATE); */
-	/* 		sem_post(&game->ai.sem_make_plan); */
-	/* 		pthread_join(game->ai.thread, NULL); */
-	/* 		region_destroy(game->ai.region); */
-	/* 	} */
-	/* 	break; */
-	/* case GS_GAME_OVER: */
-	/* 	break; */
-	/* } */
-	/* draw_field(&game->buf, &game->field); */
-}
+/* 	for (;;) { */
+/* 		sem_wait(&game->ai.sem_make_plan); */
+/* 		if (AI_THREAD_TERMINATE == atomic_load(&game->ai.msg)) */
+/* 			break; */
+/* 		game->ai.next_planstr = ai_plan(game->ai.region, weight, */
+/* 				&game->field); */
+/* 		atomic_store(&game->ai.msg, AI_THREAD_DONE); */
+/* 	} */
+/* 	return NULL; */
+/* } */
+
+/* void */
+/* hidamari_update(HidamariGame *game, Button act) */
+/* { */
+/* 	Button action = BUTTON_NONE; */
+
+/* 	switch (game->state) { */
+/* 	case GS_MENU: */
+/* 		break; */
+/* 	case GS_GAME_PLAYING: */
+/* 		if (game->ai.planstr && BUTTON_NONE != game->ai.planstr[0]) { */
+/* 			action = game->ai.planstr[0]; */
+/* 			++game->ai.planstr; */
+/* 		} else if (game->ai.planstr && BUTTON_NONE == game->ai.planstr[0]) { */
+/* 			sem_post(&game->ai.sem_make_plan); */
+/* 			game->ai.planstr = NULL; */
+/* 		} else if (AI_THREAD_DONE == atomic_load(&game->ai.msg)) { */
+/* 			game->ai.planstr = game->ai.next_planstr; */
+/* 			atomic_store(&game->ai.msg, AI_THREAD_START); */
+/* 		} */
+/* 		//ai_timer = (ai_timer + 1) % ((rand() % (15 + 1 - 5)) + 5); */
+/* 		if (0 != hidamari_field_update(&game->field, action)) { */
+/* 			game->state = GS_GAME_OVER; */
+/* 			atomic_store(&game->ai.msg, AI_THREAD_TERMINATE); */
+/* 			sem_post(&game->ai.sem_make_plan); */
+/* 			pthread_join(game->ai.thread, NULL); */
+/* 			region_destroy(game->ai.region); */
+/* 		} */
+/* 		break; */
+/* 	case GS_GAME_OVER: */
+/* 		break; */
+/* 	} */
+/* 	buffer_draw_field(&game->buf, &game->field); */
+/* } */
 
 void
 hidamari_pso_update(HidamariGame *game, double weight[3])
 {
-	game->ai.region = region_create(ai_size_requirement());
 	if (game->ai.planstr[0] == BUTTON_NONE) {
+		region_clear(game->ai.region);
 		game->ai.planstr = ai_plan(game->ai.region, weight, &game->field);
 	}
 	if (0 != hidamari_field_update(&game->field, game->ai.planstr[0])) {
 		game->state = GS_GAME_OVER;
+		region_destroy(game->ai.region);
 	}
 	++game->ai.planstr;
-	draw_field(&game->buf, &game->field);
 }

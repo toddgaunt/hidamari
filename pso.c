@@ -1,54 +1,182 @@
 /* See LICENSE file for copyright and license details */
+#include <math.h>
+#include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
+#include "ai.h"
 #include "hidamari.h"
 #include "region.h"
-#include "ai.h"
+
+char const *argv0;
+
+typedef struct {
+	int best_score;
+	double best_weight[3];
+	double weight[3];
+	double velocity[3];
+} Particle;
+
+/* Swarm weights */
+double const phi = 0.4; /* Inertia from original velocity */
+double const alpha = 0.1; /* Inertia from personal best */
+double const beta = 0.2; /* Inertia from the swarm's best */
+/* Search range bounds */
+int const b_lo = 1;
+int const b_up = 100;
+/* The swarm */
+pthread_mutex_t swarm_lock;
+atomic_int best_score_swarm = 0;
+double best_weight_swarm[3] = {0};
+Particle *p;
+/* Arguments */
+size_t n_iter;
+size_t n_particle;
 
 void
-hidamari_pso_update(HidamariGame *game, double weight[3]);
-
-static void
-dump_field(HidamariBuffer const *buf)
+usage()
 {
-	size_t y, x;
-
-	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
-		for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
-			if (HIDAMARI_TILE_SPACE == buf->tile[x][y]) {
-				putc('.', stdout);
-			} else {
-				putc('#', stdout);
-			}
-			putc(' ', stdout);
-		}
-		putc('\n', stdout);
-	}
-	printf("--\n");
+	fprintf(stderr, "usage: %s <number of particles> <number of iterations>\n", argv0);
+	exit(EXIT_FAILURE);
 }
 
 size_t
-fitness(HidamariGame *game)
+fitness(double weight[3])
 {
-	double weight[3] = {3, 2, 10};
-	hidamari_init(game);
+	HidamariGame game;
+	hidamari_init(&game);
 	do {
-		hidamari_pso_update(game, weight);
-		dump_field(&game->buf);
-	} while (game->state == GS_GAME_PLAYING);
-	return game->field.score;
+		hidamari_pso_update(&game, weight);
+	} while (game.state == GS_GAME_PLAYING);
+	return game.field.score;
 }
 
 int
-main()
+rfrange(int lower, int upper)
 {
-	HidamariGame game;
+	return (rand() % (upper + 1 - lower)) + lower;
+}
 
+void
+update_swarm_weight(double weight[3])
+{
+	pthread_mutex_lock(&swarm_lock);
+	memcpy(best_weight_swarm, weight, sizeof(best_weight_swarm));
+	pthread_mutex_unlock(&swarm_lock);
+}
+
+void *
+pso_work(void *arg)
+{
+	size_t i;
+	int tmp;
+	double rp, rg;
+	size_t n = n_iter;
+	size_t index = (size_t)arg;
+	Particle *pi = &p[index];
+
+	for (i = 0; i < 3; ++i) {
+		pi->weight[i] = rfrange(b_lo, b_up);
+		pi->best_weight[i] = pi->weight[i];
+	}
+	/* Evaluate the new fitness of the particle */
+	tmp = fitness(pi->weight);
+	printf("particle %zu: (%f, %f, %f) = %d\n",
+			index,
+			pi->weight[0],
+			pi->weight[1],
+			pi->weight[2],
+			tmp);
+	if (tmp > atomic_load(&best_score_swarm)) {
+		update_swarm_weight(pi->weight);
+		atomic_store(&best_score_swarm, tmp);
+	}
+	for (i = 0; i < 3; ++i) {
+		pi->velocity[i] = rfrange(-abs(b_up - b_lo),
+					    abs(b_up - b_lo));
+	}
+	while (--n) {
+		pthread_mutex_lock(&swarm_lock);
+		/* Update the particle's velocity */
+		for (i = 0; i < 3; ++i) {
+			rp = (double)rfrange(1, 100) / 100.0;
+			rg = (double)rfrange(1, 100) / 100.0;
+			/* The magical velocity formula */
+			pi->velocity[i] = phi * pi->velocity[i]
+				+ alpha * rp * (pi->best_weight[i]
+						- pi->weight[i])
+				+ beta * rg * (best_weight_swarm[i]
+						- pi->weight[i]);
+		}
+		pthread_mutex_unlock(&swarm_lock);
+		/* Update the particle's position */
+		for (i = 0; i < 3; ++i)
+			pi->weight[i] += pi->velocity[i];
+		/* Evaluate the new fitness of the particle */
+		tmp = fitness(pi->weight);
+		printf("particle %zu: (%f, %f, %f) = %d\n",
+				index,
+				pi->weight[0],
+				pi->weight[1],
+				pi->weight[2],
+				tmp);
+		if (tmp > pi->best_score) {
+			memcpy(pi->best_weight, pi->weight,
+				sizeof(pi->best_weight));
+			pi->best_score = tmp;
+			if (tmp > atomic_load(&best_score_swarm)) {
+				update_swarm_weight(pi->weight);
+				atomic_store(&best_score_swarm, tmp);
+			}
+		}
+	}
+	return NULL;
+}
+
+/* Particle Swarm Optimization for hidamari. The three dimensions being
+ * optimized are the weights for each heuristic used by the AI to play
+ * the game.
+ */
+int
+main(int argc, char **argv)
+{
+
+	size_t i;
+	pthread_t *thread;
+
+	argv0 = argv[0];
+	if (argc != 3)
+		usage();
+	n_particle = strtol(argv[1], NULL, 10);
+	n_iter = strtol(argv[2], NULL, 10);
+	p = malloc(sizeof(*p) * n_particle);
+	thread = malloc(sizeof(pthread_t) * n_particle);
+	pthread_mutex_init(&swarm_lock, NULL);
 	srand(time(NULL));
-	fitness(&game);
-	return 0;
+	/* Start the swarm */
+	for (i = 0; i < n_particle; ++i) {
+		if(pthread_create(&thread[i], NULL, pso_work, (void *) i) != 0) {
+			fprintf(stderr, "error: Could not create thread\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+	/* End the swarm */
+	for (i = 0; i < n_particle; ++i) {
+		if (pthread_join(thread[i], NULL)) {
+			fprintf(stderr, "error: Could not join thread\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+	free(p);
+	free(thread);
+	printf("best particle: (%f, %f, %f) = %d\n",
+		best_weight_swarm[0],
+		best_weight_swarm[1],
+		best_weight_swarm[2],
+		best_score_swarm);
+	return EXIT_SUCCESS;
 }
