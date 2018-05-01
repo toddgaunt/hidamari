@@ -256,7 +256,7 @@ static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 };
 
 /* Initialize the playfield, and allocate the global region used by all
- * games. Pseudo-idempotent. */
+ * games. Also start the AI-thread. */
 void
 hidamari_init(HidamariGame *game);
 
@@ -270,14 +270,5 @@ hidamari_init(HidamariGame *game);
  */
 void
 hidamari_update(HidamariGame *game, Button act);
-
-void
-hidamari_state_save(HidamariGame *game, u1 slot);
-
-void
-hidamari_field_init(HidamariPlayField *field);
-
-int
-hidamari_field_update(HidamariPlayField *field, Button act);
 
 #endif
