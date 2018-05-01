@@ -1,10 +1,13 @@
 /* See LICENSE file for copyright and license details */
 #include <assert.h>
+#include <pthread.h>
+#include <semaphore.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdatomic.h>
 
 #include "ai.h"
 #include "hidamari.h"
@@ -379,7 +382,7 @@ hidamari_field_update(HidamariPlayField *field, Button act)
 	return 0;
 }
 
-void
+static void
 buffer_init(HidamariBuffer *buf)
 {
 	size_t x, y;
@@ -400,28 +403,50 @@ buffer_init(HidamariBuffer *buf)
 	}
 }
 
+static inline void *
+ai_thread_work(void *arg)
+{
+	HidamariGame *game = arg;
+
+	for (;;) {
+		sem_wait(&game->ai.sem_make_plan);
+		game->ai.next_planstr = ai_plan(game->ai.region, &game->field);
+		atomic_store(&game->ai.plan_is_ready, true);
+	}
+	return NULL;
+}
+
 void
 hidamari_init(HidamariGame *game)
 {
-	static const Button dbv = BUTTON_NONE;
-
-	game->state = GS_GAME;
 	memset(game, 0, sizeof(*game));
+	game->state = GS_GAME;
 	buffer_init(&game->buf);
 	hidamari_field_init(&game->field);
 	game->ai.region = region_create(ai_size_requirement());
-	game->ai.planstr = &dbv;
+	game->ai.planstr = NULL;
+	atomic_init(&game->ai.plan_is_ready, false);
+	sem_init(&game->ai.sem_make_plan, 0, 1);
+	pthread_create(&game->ai.thread, NULL, ai_thread_work, game);
 }
 
 void
 hidamari_update(HidamariGame *game, Button act)
 {
-	if (BUTTON_NONE == game->ai.planstr[0]) {
+	Button action = BUTTON_NONE;
+
+	if (game->ai.planstr && BUTTON_NONE != game->ai.planstr[0]) {
+		action = game->ai.planstr[0];
+		++game->ai.planstr;
+	} else if (game->ai.planstr && BUTTON_NONE == game->ai.planstr[0]) {
+		sem_post(&game->ai.sem_make_plan);
+		game->ai.planstr = NULL;
+	} else if (atomic_load(&game->ai.plan_is_ready)) {
+		game->ai.planstr = game->ai.next_planstr;
 		region_clear(game->ai.region);
-		game->ai.planstr = ai_plan(game->ai.region, &game->field);
+		atomic_store(&game->ai.plan_is_ready, false);
 	}
-	hidamari_field_update(&game->field, game->ai.planstr[0]);
-	++game->ai.planstr;
+	hidamari_field_update(&game->field, action);
 	//ai_timer = (ai_timer + 1) % ((rand() % (15 + 1 - 5)) + 5);
 	draw_field(&game->buf, &game->field);
 }

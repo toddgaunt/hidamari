@@ -7,7 +7,7 @@
 #include "hidamari.h"
 #include "region.h"
 
-#define DEPTH 2
+#define DEPTH 2 
 #define DEPTH_IGNORED (DEPTH - DEPTH)
 
 FieldNode *

@@ -2,6 +2,10 @@
 #ifndef HIDAMARI_H
 #define HIDAMARI_H
 
+#include <pthread.h>
+#include <semaphore.h>
+#include <stdatomic.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "type.h"
@@ -110,6 +114,11 @@ typedef struct AIState AIState;
 struct AIState {
 	void *region;
 	Button const *planstr;
+	/* Synchronization stuff */
+	pthread_t thread;
+	Button const *next_planstr;
+	atomic_bool plan_is_ready;
+	sem_t sem_make_plan;
 };
 
 typedef struct {
