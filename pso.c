@@ -27,7 +27,7 @@ double const alpha = 0.1; /* Inertia from personal best */
 double const beta = 0.2; /* Inertia from the swarm's best */
 /* Search range bounds */
 int const b_lo = 1;
-int const b_up = 50;
+int const b_up = 100;
 /* The swarm */
 pthread_mutex_t swarm_lock;
 atomic_int best_score_swarm = 0;
@@ -126,7 +126,7 @@ pso_work(void *arg)
 		pi->velocity[i] = rfrange(-abs(b_up - b_lo),
 					    abs(b_up - b_lo));
 	}
-	display();
+	//display();
 	/* Continously move and evaluate the particle */
 	while (--n) {
 		pthread_mutex_lock(&swarm_lock);
@@ -161,7 +161,7 @@ pso_work(void *arg)
 			if (tmp > atomic_load(&best_score_swarm))
 				update_swarm_weight(tmp, pi->weight);
 		}
-		display();
+		//display();
 	}
 	return NULL;
 }
