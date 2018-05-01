@@ -7,8 +7,8 @@
 #include "hidamari.h"
 #include "region.h"
 
-#define DEPTH 2 
-#define DEPTH_IGNORED (DEPTH - DEPTH)
+#define DEPTH_ACTUAL 2
+#define DEPTH 3
 
 FieldNode *
 create_node(void *region, HidamariPlayField const *init)
@@ -176,7 +176,7 @@ mkplan(void *region, FieldNode *goal)
 	size_t n_move = 0;
 	size_t i;
 
-	for (i = 0; i < DEPTH_IGNORED; ++i) {
+	for (i = 0; i < DEPTH - DEPTH_ACTUAL; ++i) {
 		goal = goal->parent;
 	}
 	for (fp = goal; fp->parent; fp = fp->parent) {
@@ -201,12 +201,15 @@ ai_size_requirement()
 	return pow(36, DEPTH) * (sizeof(FieldNode) + 10);
 }
 
+size_t n_expanded;
+
 Button const *
 ai_plan(void *region, HidamariPlayField const *init) {
 	FieldNode *stack;
 	FieldNode *goal;
 	FieldNode *fp;
 
+	n_expanded = 0;
 	stack = create_node(region, init);
 	goal = NULL;
 	while (stack) {
@@ -220,9 +223,15 @@ ai_plan(void *region, HidamariPlayField const *init) {
 				goal = fp;
 			}
 		} else {
+			/* Cull any nodes beyond the deterministic depth that
+			 * cannot beat the goal state */
+			if (goal && fp->g == DEPTH_ACTUAL && evaluate(goal) < evaluate(fp))
+				continue;
 			if (0 > expand(region, &stack, fp))
 				return NULL;
+			++n_expanded;
 		}
 	}
+	printf("n_expanded: %zu\n", n_expanded);
 	return mkplan(region, goal);
 }
