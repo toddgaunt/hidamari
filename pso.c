@@ -21,7 +21,7 @@ typedef struct {
 	double velocity[3];
 } Particle;
 
-/* Swarm weights */
+/* Swarm velocity function weights */
 double const phi = 0.4; /* Inertia from original velocity */
 double const alpha = 0.1; /* Inertia from personal best */
 double const beta = 0.2; /* Inertia from the swarm's best */
@@ -44,6 +44,10 @@ usage()
 	exit(EXIT_FAILURE);
 }
 
+/* The fitness function for each particle. The fitness score is determined
+ * by the in-game score the particle can achieve for playing for as long
+ * as possible
+ */
 size_t
 fitness(double weight[3])
 {
@@ -55,17 +59,22 @@ fitness(double weight[3])
 	return game.field.score;
 }
 
+/* Generate a random number between [lower, upper] */
 int
 rfrange(int lower, int upper)
 {
 	return (rand() % (upper + 1 - lower)) + lower;
 }
 
+/* Simply a helper function to ensure thread safety when updating the global
+ * swarm values
+ */
 void
-update_swarm_weight(double weight[3])
+update_swarm_weight(int score, double weight[3])
 {
 	pthread_mutex_lock(&swarm_lock);
 	memcpy(best_weight_swarm, weight, sizeof(best_weight_swarm));
+	atomic_store(&best_score_swarm, score);
 	pthread_mutex_unlock(&swarm_lock);
 }
 
@@ -79,11 +88,11 @@ pso_work(void *arg)
 	size_t index = (size_t)arg;
 	Particle *pi = &p[index];
 
+	/* Initialize the particle */
 	for (i = 0; i < 3; ++i) {
 		pi->weight[i] = rfrange(b_lo, b_up);
 		pi->best_weight[i] = pi->weight[i];
 	}
-	/* Evaluate the new fitness of the particle */
 	tmp = fitness(pi->weight);
 	printf("particle %zu: (%f, %f, %f) = %d\n",
 			index,
@@ -91,20 +100,20 @@ pso_work(void *arg)
 			pi->weight[1],
 			pi->weight[2],
 			tmp);
-	if (tmp > atomic_load(&best_score_swarm)) {
-		update_swarm_weight(pi->weight);
-		atomic_store(&best_score_swarm, tmp);
-	}
+	if (tmp > atomic_load(&best_score_swarm))
+		update_swarm_weight(tmp, pi->weight);
 	for (i = 0; i < 3; ++i) {
 		pi->velocity[i] = rfrange(-abs(b_up - b_lo),
 					    abs(b_up - b_lo));
 	}
+	/* Continously move and evaluate the particle */
 	while (--n) {
 		pthread_mutex_lock(&swarm_lock);
 		/* Update the particle's velocity */
 		for (i = 0; i < 3; ++i) {
 			rp = (double)rfrange(1, 100) / 100.0;
 			rg = (double)rfrange(1, 100) / 100.0;
+			printf("rp: %f\n", rp);
 			/* The magical velocity formula */
 			pi->velocity[i] = phi * pi->velocity[i]
 				+ alpha * rp * (pi->best_weight[i]
@@ -128,23 +137,20 @@ pso_work(void *arg)
 			memcpy(pi->best_weight, pi->weight,
 				sizeof(pi->best_weight));
 			pi->best_score = tmp;
-			if (tmp > atomic_load(&best_score_swarm)) {
-				update_swarm_weight(pi->weight);
-				atomic_store(&best_score_swarm, tmp);
-			}
+			if (tmp > atomic_load(&best_score_swarm))
+				update_swarm_weight(tmp, pi->weight);
 		}
 	}
 	return NULL;
 }
 
-/* Particle Swarm Optimization for hidamari. The three dimensions being
+/* Particle Swarm Optimization for Hidamari. The three dimensions being
  * optimized are the weights for each heuristic used by the AI to play
  * the game.
  */
 int
 main(int argc, char **argv)
 {
-
 	size_t i;
 	pthread_t *thread;
 
