@@ -202,25 +202,27 @@ ai_size_requirement()
 }
 
 Button const *
-ai_plan(void *region, AIContext *context, HidamariPlayField const *init) {
+ai_plan(void *region, HidamariPlayField const *init) {
+	FieldNode *stack;
+	FieldNode *goal;
 	FieldNode *fp;
 
-	context->stack = create_node(region, init);
-	context->goal = NULL;
-	while (context->stack) {
-		fp = context->stack;
-		context->stack = context->stack->next;
+	stack = create_node(region, init);
+	goal = NULL;
+	while (stack) {
+		fp = stack;
+		stack = stack->next;
 		if (DEPTH == fp->g) {
 			/* Evaluate the current goal state for "goodness" */
-			if (!context->goal) {
-				context->goal = fp;
-			} else if (evaluate(fp) < evaluate(context->goal)) {
-				context->goal = fp;
+			if (!goal) {
+				goal = fp;
+			} else if (evaluate(fp) < evaluate(goal)) {
+				goal = fp;
 			}
 		} else {
-			if (0 > expand(region, &context->stack, fp))
+			if (0 > expand(region, &stack, fp))
 				return NULL;
 		}
 	}
-	return mkplan(region, context->goal);
+	return mkplan(region, goal);
 }

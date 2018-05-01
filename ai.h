@@ -4,6 +4,16 @@
 
 #include "hidamari.h"
 
+typedef struct FieldNode FieldNode;
+struct FieldNode {
+	size_t g;
+	size_t n_action;
+	Button *action;
+	HidamariPlayField field;
+	FieldNode *parent;
+	FieldNode *next;
+};
+
 /* Compute the minimum size of the region needed by ai_plan() */
 size_t
 ai_size_requirement();
@@ -22,6 +32,6 @@ ai_size_requirement();
  *	at a desirable state.
  */
 Button const *
-ai_plan(void *region, AIContext *context, HidamariPlayField const *init);
+ai_plan(void *region, HidamariPlayField const *init);
 
 #endif
