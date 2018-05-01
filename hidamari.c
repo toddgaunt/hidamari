@@ -65,10 +65,39 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 	size_t x, y;
 	HidamariTile score[HIDAMARI_WIDTH - 2 + 1];
 
+	/* Draw the next piece prievew area */
+	for (x = 1; x < HIDAMARI_WIDTH - 1; ++x) {
+		for (y = HIDAMARI_HEIGHT_VISIBLE + 3; y < HIDAMARI_HEIGHT_VISIBLE + 6; ++y) {
+			if (HIDAMARI_HEIGHT_VISIBLE + 4 == y
+			|| HIDAMARI_HEIGHT_VISIBLE + 3 == y) {
+				buf->tile[x][y] = HIDAMARI_TILE_SPACE;
+			} else {
+				buf->tile[x][y] = HIDAMARI_TILE_WALL;
+			}
+		}
+	}
+
+	/* Draw the actual next piece */
+	for (i = 0; i < 4; ++i) {
+		x = HIDAMARI_WIDTH / 2 - 2 + hidamari_orientation[field->next]
+		                              [0]
+		                              [i].x;
+		y = (HIDAMARI_HEIGHT_VISIBLE + 4)
+			- hidamari_orientation[field->next]
+		                              [0]
+		                              [i].y;
+		/* SPECIAL CASE: O needs to be elevated by a single position */
+		if (HIDAMARI_O == field->next)
+			++y;
+		/* if (y >= HIDAMARI_HEIGHT_VISIBLE + 4) */
+		/* 	continue; */
+		buf->tile[x][y] = HIDAMARI_TILE_SPACE + 1 + field->next;
+	}
+
 	/* Draw the scoreboard */
 	snprintf((char *)score, sizeof(score) + 1, "%010d", field->score);
 	for (x = 1; x < HIDAMARI_WIDTH - 1; ++x) {
-		for (y = HIDAMARI_HEIGHT_VISIBLE; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
+		for (y = HIDAMARI_HEIGHT_VISIBLE; y < HIDAMARI_HEIGHT_VISIBLE + 3; ++y) {
 			if (HIDAMARI_HEIGHT_VISIBLE + 1 == y) {
 				buf->tile[x][y] = score[x - 1] - 48;
 			} else {
