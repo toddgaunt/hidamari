@@ -23,11 +23,11 @@ typedef struct {
 
 /* Swarm velocity function weights */
 double const phi = 0.4; /* Inertia from original velocity */
-double const alpha = 0.1; /* Inertia from personal best */
-double const beta = 0.2; /* Inertia from the swarm's best */
+double const alpha = 0.2; /* Inertia from personal best */
+double const beta = 0.4; /* Inertia from the swarm's best */
 /* Search range bounds */
 int const b_lo = 1;
-int const b_up = 100;
+int const b_up = 50;
 /* The swarm */
 pthread_mutex_t swarm_lock;
 atomic_int best_score_swarm = 0;
@@ -42,6 +42,25 @@ usage()
 {
 	fprintf(stderr, "usage: %s <number of particles> <number of iterations>\n", argv0);
 	exit(EXIT_FAILURE);
+}
+
+void
+display()
+{
+	int i, j;
+	char buf[b_up][b_up];
+	memset(buf, ' ', b_up * b_up);
+	for (i = 0; i < (int)n_particle; ++i) {
+		buf[(int)p[i].weight[0] % b_up]
+		   [(int)p[i].weight[1] % b_up] = 48 + i;
+	}
+	for (i = 0; i < b_up; ++i) {
+		for (j = 0; j < b_up; ++j) {
+			putc(buf[i][j], stdout);
+			putc(' ', stdout);
+		}
+		putc('\n', stdout);
+	}
 }
 
 /* The fitness function for each particle. The fitness score is determined
@@ -107,6 +126,7 @@ pso_work(void *arg)
 		pi->velocity[i] = rfrange(-abs(b_up - b_lo),
 					    abs(b_up - b_lo));
 	}
+	//display();
 	/* Continously move and evaluate the particle */
 	while (--n) {
 		pthread_mutex_lock(&swarm_lock);
@@ -141,6 +161,7 @@ pso_work(void *arg)
 			if (tmp > atomic_load(&best_score_swarm))
 				update_swarm_weight(tmp, pi->weight);
 		}
+		//display();
 	}
 	return NULL;
 }
