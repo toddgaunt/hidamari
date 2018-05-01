@@ -32,6 +32,6 @@ ai_size_requirement();
  *	at a desirable state.
  */
 Button const *
-ai_plan(void *region, HidamariPlayField const *init);
+ai_plan(void *region, double weight[3], HidamariPlayField const *init);
 
 #endif

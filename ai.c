@@ -7,8 +7,7 @@
 #include "hidamari.h"
 #include "region.h"
 
-#define DEPTH_ACTUAL 2
-#define DEPTH 3
+#define DEPTH 2
 
 void
 hidamari_field_init(HidamariPlayField *field);
@@ -157,13 +156,13 @@ h3(FieldNode *np)
  * is multiplied by a certain weight depending on how valuable it is deemed.
  */
 static int
-evaluate(FieldNode *np)
+evaluate(FieldNode *np, double weight[3])
 {
 	int score = 0;
 
-	score += 3 * h1(np);
-	score += 2 * h2(np);
-	score += 10 * h3(np);
+	score += weight[0] * h1(np);
+	score += weight[2] * h2(np);
+	score += weight[3] * h3(np);
 	return score;
 }
 
@@ -183,9 +182,6 @@ mkplan(void *region, FieldNode *goal)
 	size_t n_move = 0;
 	size_t i;
 
-	for (i = 0; i < DEPTH - DEPTH_ACTUAL; ++i) {
-		goal = goal->parent;
-	}
 	for (fp = goal; fp->parent; fp = fp->parent) {
 		n_move += fp->n_action;
 	}
@@ -207,7 +203,7 @@ ai_size_requirement()
 }
 
 Button const *
-ai_plan(void *region, HidamariPlayField const *init) {
+ai_plan(void *region, double weight[3], HidamariPlayField const *init) {
 	FieldNode *stack;
 	FieldNode *goal;
 	FieldNode *fp;
@@ -221,14 +217,10 @@ ai_plan(void *region, HidamariPlayField const *init) {
 			/* Evaluate the current goal state for "goodness" */
 			if (!goal) {
 				goal = fp;
-			} else if (evaluate(fp) < evaluate(goal)) {
+			} else if (evaluate(fp, weight) < evaluate(goal, weight)) {
 				goal = fp;
 			}
 		} else {
-			/* Cull any nodes beyond the deterministic depth that
-			 * cannot even beat the goal state */
-			if (goal && fp->g == DEPTH_ACTUAL && evaluate(goal) < evaluate(fp))
-				continue;
 			if (0 > expand(region, &stack, fp))
 				fprintf(stderr, "error: Ran out of memory during AI planning");
 		}

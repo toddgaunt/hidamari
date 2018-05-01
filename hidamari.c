@@ -436,10 +436,12 @@ static inline void *
 ai_thread_work(void *arg)
 {
 	HidamariGame *game = arg;
+	double weight[3] = {3, 2, 10};
 
 	for (;;) {
 		sem_wait(&game->ai.sem_make_plan);
-		game->ai.next_planstr = ai_plan(game->ai.region, &game->field);
+		game->ai.next_planstr = ai_plan(game->ai.region, weight,
+				&game->field);
 		atomic_store(&game->ai.plan_is_ready, true);
 	}
 	return NULL;
