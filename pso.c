@@ -94,8 +94,9 @@ pso_work(void *arg)
 		pi->best_weight[i] = pi->weight[i];
 	}
 	tmp = fitness(pi->weight);
-	printf("particle %zu: (%f, %f, %f) = %d\n",
+	printf("particle %zu:%zu (%f, %f, %f) = %d\n",
 			index,
+			n_iter - n,
 			pi->weight[0],
 			pi->weight[1],
 			pi->weight[2],
@@ -126,8 +127,9 @@ pso_work(void *arg)
 			pi->weight[i] += pi->velocity[i];
 		/* Evaluate the new fitness of the particle */
 		tmp = fitness(pi->weight);
-		printf("particle %zu: (%f, %f, %f) = %d\n",
+		printf("particle %zu:%zu (%f, %f, %f) = %d\n",
 				index,
+				n_iter - n,
 				pi->weight[0],
 				pi->weight[1],
 				pi->weight[2],
