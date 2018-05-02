@@ -167,16 +167,10 @@ apso_work(void *arg)
 						- p->position[i]);
 		}
 		/* Update the particle's position */
-		for (i = 0; i < 3; ++i)
+		for (i = 0; i < s->n_dimension; ++i)
 			p->position[i] += p->velocity[i];
 		/* Evaluate the new fitness of the particle */
 		score = s->fitness(p->position);
-		printf("particle %d:%zu (%f, %f) = %d\n",
-				p->id,
-				p->iter,
-				p->position[0],
-				p->position[1],
-				score);
 		if (score > p->p_score) {
 			memcpy(p->p_position, p->position,
 				sizeof(*p->p_position) * s->n_dimension);
@@ -232,11 +226,11 @@ apso(
 		s.pt[i].p_position = malloc(sizeof(*s.pt[i].position) * n_dimension);
 		s.pt[i].position = malloc(sizeof(*s.pt[i].position) * n_dimension);
 		s.pt[i].velocity = malloc(sizeof(*s.pt[i].position) * n_dimension);
-		for (j = 0; j < 3; ++j) {
+		for (j = 0; j < n_dimension; ++j) {
 			s.pt[i].position[j] = rfrange(b_lo, b_up);
 			s.pt[i].p_position[j] = s.pt[i].position[j];
 		}
-		for (j = 0; j < 3; ++j) {
+		for (j = 0; j < n_dimension; ++j) {
 			s.pt[i].velocity[j] = rfrange(-abs(b_up - b_lo),
 						    abs(b_up - b_lo));
 		}
@@ -257,10 +251,6 @@ apso(
 			exit(EXIT_FAILURE);
 		}
 	}
-	printf("best position: (%f, %f) = %d\n",
-			s.g_position[0],
-			s.g_position[1],
-			s.g_score);
 	for (i = 0; i < n_particle; ++i) {
 		free(s.pt[i].p_position);
 		free(s.pt[i].position);
@@ -310,6 +300,9 @@ main(int argc, char **argv)
 	n_iteration = strtol(argv[2], NULL, 10);
 	best = apso(4, n_iteration, n_particle, 2, -100, 100, 0.3, 0.1, 0.6,
 			distance_fitness);
+	printf("best position: (%f, %f)\n",
+			best[0],
+			best[1]);
 	free(best);
 	return 0;
 }
