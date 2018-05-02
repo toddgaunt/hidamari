@@ -219,14 +219,15 @@ apso(
 		swarm_queue_push(&s, &s.pt[i]);
 	}
 	/* Begin the swarm */
-	for (i = 0; i < n_thread; ++i) {
+	for (i = 0; i < n_thread - 1; ++i) {
 		if (pthread_create(&tid[i], NULL, apso_work, (void *) &s) != 0) {
 			fprintf(stderr, "error: Could not create thread\n");
 			exit(EXIT_FAILURE);
 		}
 	}
+	apso_work(&s);
 	/* End the swarm */
-	for (i = 0; i < n_thread; ++i) {
+	for (i = 0; i < n_thread - 1; ++i) {
 		if (pthread_join(tid[i], NULL)) {
 			fprintf(stderr, "error: Could not join thread\n");
 			exit(EXIT_FAILURE);
