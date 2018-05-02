@@ -52,6 +52,32 @@ typedef struct {
 	Particle *pt;
 } Swarm;
 
+void display(Swarm *s)
+{
+	int i, j;
+	char buf[s->b_up][s->b_up];
+
+	memset(buf, ' ', sizeof(buf));
+	for (i = 0; i < (int)s->n_pt; ++i) {
+		if (s->pt[i].position[0] >= s->b_up
+		|| s->pt[i].position[1] >= s->b_up)
+			continue;
+		if (s->pt[i].id < 10) {
+			buf[(int)s->pt[i].position[0]][(int)s->pt[i].position[1]] = 48 + s->pt[i].id;
+		} else {
+			buf[(int)s->pt[i].position[0]][(int)s->pt[i].position[1]] = 65 - 10 + s->pt[i].id;
+		}
+	}
+
+	for (i = 0; i < s->b_up; ++i) {
+		for (j = 0; j < s->b_up; ++j) {
+			putc(buf[i][j], stdout);
+			putc(' ', stdout);
+		}
+		putc('\n', stdout);
+	}
+}
+
 void
 usage()
 {
@@ -163,6 +189,7 @@ apso_work(void *arg)
 			p->iter += 1;
 			swarm_queue_push(s, p);
 		}
+		display(s);
 	}
 	return NULL;
 }
@@ -170,8 +197,8 @@ apso_work(void *arg)
 float *
 apso(
 		size_t n_thread,
-		size_t n_particle,
 		size_t n_iteration,
+		size_t n_particle,
 		size_t n_dimension,
 		int b_lo, int b_up,
 		float phi, float alpha, float beta,
@@ -261,7 +288,7 @@ hidamari_fitness(float const *position)
 	hidamari_init(&game);
 	do {
 		hidamari_pso_update(&game, weight);
-	} while (game.state == GS_GAME_PLAYING && game.field.score < 100);
+	} while (game.state == GS_GAME_PLAYING && game.field.score < 5000);
 	return game.field.score;
 }
 
@@ -278,7 +305,7 @@ main(int argc, char **argv)
 		usage();
 	n_particle = strtol(argv[1], NULL, 10);
 	n_iteration = strtol(argv[2], NULL, 10);
-	best = apso(4, n_particle, n_iteration, 3, 1, 100, 0.4, 0.1, 0.2,
+	best = apso(4, n_iteration, n_particle, 3, 1, 100, 0.4, 0.1, 0.2,
 			hidamari_fitness);
 	free(best);
 	return 0;
