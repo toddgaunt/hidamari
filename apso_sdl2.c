@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
+
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 
 #include "ai.h"
 #include "hidamari.h"
@@ -51,32 +55,6 @@ typedef struct {
 	size_t n_pt;
 	Particle *pt;
 } Swarm;
-
-void display(Swarm *s)
-{
-	int i, j;
-	char buf[s->b_up][s->b_up];
-
-	memset(buf, ' ', sizeof(buf));
-	for (i = 0; i < (int)s->n_pt; ++i) {
-		if (s->pt[i].position[0] >= s->b_up
-		|| s->pt[i].position[1] >= s->b_up)
-			continue;
-		if (s->pt[i].id < 10) {
-			buf[(int)s->pt[i].position[0]][(int)s->pt[i].position[1]] = 48 + s->pt[i].id;
-		} else {
-			buf[(int)s->pt[i].position[0]][(int)s->pt[i].position[1]] = 65 - 10 + s->pt[i].id;
-		}
-	}
-
-	for (i = 0; i < s->b_up; ++i) {
-		for (j = 0; j < s->b_up; ++j) {
-			putc(buf[i][j], stdout);
-			putc(' ', stdout);
-		}
-		putc('\n', stdout);
-	}
-}
 
 void
 usage()
@@ -152,17 +130,20 @@ apso_work(void *arg)
 	Particle *p;
 	Swarm *s = arg;
 	float score;
+	float rp, rg;
 
 	/* Continously move and evaluate the particles */
 	while ((p = swarm_queue_pop(s))) {
 		/* Update the particle's velocity */
 		for (i = 0; i < s->n_dimension; ++i) {
+			rp = rfrange(0, 1);
+			rg = rfrange(0, 1);
 			/* The magical velocity formula */
 			p->velocity[i] = 
 				+ s->phi * p->velocity[i]
-				+ s->alpha * rfrange(0, 1) * (p->p_position[i]
+				+ s->alpha * rp * (p->p_position[i]
 						- p->position[i])
-				+ s->beta * rfrange(0, 1) * (swarm_g_position_load(s, i)
+				+ s->beta * rg * (swarm_g_position_load(s, i)
 						- p->position[i]);
 		}
 		/* Update the particle's position */
@@ -176,12 +157,46 @@ apso_work(void *arg)
 			p->p_score = score;
 			swarm_g_compare_store(s, score, p->position);
 		}
-		if (p->iter < s->n_iteration) {
+		/* if (p->iter < s->n_iteration) { */
 			p->iter += 1;
 			swarm_queue_push(s, p);
-		}
+		/* } */
 	}
 	return NULL;
+}
+
+void
+render(SDL_Renderer *renderer, Swarm *s)
+{
+	int i, j;
+	SDL_Rect dest_r = {.h = 2, .w = 2, .x = 0, .y = 0};
+	char buf[1000][1000];
+
+	memset(buf, ' ', sizeof(buf));
+	for (i = 0; i < (int)s->n_pt; ++i) {
+		if (s->pt[i].position[0] * 10 >= 1000
+		|| s->pt[i].position[0] * 10 < 0
+		|| s->pt[i].position[1] * 10 >= 1000
+		|| s->pt[i].position[1] * 10 < 0)
+			continue;
+		buf[(int)(s->pt[i].position[0] * 10)][(int)(s->pt[i].position[1] * 10)] = '*';
+	}
+	SDL_RenderClear(renderer);
+	/* Render the static grid */
+	for (i = 0; i < 1000; ++i) {
+		for (j = 0; j < 1000; ++j) {
+			if ('*' != buf[i][j])
+				continue;
+			dest_r.x = i - 1;
+			dest_r.y = j - 1;
+			SDL_SetRenderDrawColor(renderer, 255, 100, 100, 255);
+			SDL_RenderFillRect(renderer, &dest_r);
+		}
+	}
+
+	/* Background color */
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	SDL_RenderPresent(renderer); 
 }
 
 float *
@@ -236,19 +251,60 @@ apso(
 		swarm_queue_push(&s, &s.pt[i]);
 	}
 	/* Begin the swarm */
-	for (i = 0; i < n_thread - 1; ++i) {
-		if (pthread_create(&tid[i], NULL, apso_work, (void *) &s) != 0) {
-			fprintf(stderr, "error: Could not create thread\n");
-			exit(EXIT_FAILURE);
-		}
+	for (i = 0; i < n_thread; ++i) {
+		if (pthread_create(&tid[i], NULL, apso_work, (void *) &s) != 0)
+			return NULL;
 	}
-	apso_work(&s);
-	/* End the swarm */
-	for (i = 0; i < n_thread - 1; ++i) {
-		if (pthread_join(tid[i], NULL)) {
-			fprintf(stderr, "error: Could not join thread\n");
+	//apso_work(&s);
+	{
+		uint32_t acc, dt;
+		uint32_t last = SDL_GetTicks();
+		uint32_t now;
+		uint32_t frame_time;
+		SDL_Window *screen;
+		SDL_Event event;
+		dt = 1000 / 60; /* miliseconds / frames */
+
+		if (SDL_Init(SDL_INIT_VIDEO) < 0)
 			exit(EXIT_FAILURE);
+		screen = SDL_CreateWindow("Swarm - SDL2",
+						      SDL_WINDOWPOS_UNDEFINED,
+						      SDL_WINDOWPOS_UNDEFINED,
+						      512, 512,
+						      SDL_WINDOW_RESIZABLE |
+						      SDL_WINDOW_OPENGL);
+		if (NULL == screen)
+			exit(EXIT_FAILURE);
+		SDL_Renderer *renderer = SDL_CreateRenderer(screen, -1, 0);
+		if (NULL == renderer)
+			exit(EXIT_FAILURE);
+		/* Set window properties */
+		SDL_RenderSetLogicalSize(renderer, 1000, 1000);
+		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
+
+		acc = 0;
+		for (;;) {
+			now = SDL_GetTicks();
+			frame_time = now - last;
+			last = now;
+			acc += frame_time;
+
+			while (acc >= dt) {
+				while (SDL_PollEvent(&event)) {      
+					switch (event.type) {
+					case SDL_QUIT:
+						exit(EXIT_SUCCESS);
+					}
+				}
+				acc -= dt;
+			}
+			render(renderer, &s);
 		}
+	}	
+	/* End the swarm */
+	for (i = 0; i < n_thread; ++i) {
+		if (pthread_join(tid[i], NULL))
+			return NULL;
 	}
 	for (i = 0; i < n_particle; ++i) {
 		free(s.pt[i].p_position);
@@ -262,26 +318,10 @@ apso(
 }
 
 float
-hidamari_fitness(float const *position)
-{
-	HidamariGame game;
-	double weight[3];
-
-	weight[0] = position[0];
-	weight[1] = position[1];
-	weight[2] = position[2];
-	hidamari_init(&game);
-	do {
-		hidamari_pso_update(&game, weight);
-	} while (game.state == GS_GAME_PLAYING && game.field.score < 5000);
-	return game.field.score;
-}
-
-float
 distance_fitness(float const *position)
 {
-	return -sqrt(pow(10 - position[0], 2) + pow(10 - position[1], 2));
-
+	//usleep(100);
+	return - sqrt(pow(50 - position[0], 2.0) + pow(50 - position[1], 2.0));
 }
 
 int
@@ -297,7 +337,7 @@ main(int argc, char **argv)
 		usage();
 	n_particle = strtol(argv[1], NULL, 10);
 	n_iteration = strtol(argv[2], NULL, 10);
-	best = apso(4, n_iteration, n_particle, 2, 1, 100, 0.4, 0.1, 0.2,
+	best = apso(4, n_iteration, n_particle, 2, 0, 100, 0.004, 0.001, 0.002,
 			distance_fitness);
 	printf("best position: (%f, %f)\n",
 			best[0],
