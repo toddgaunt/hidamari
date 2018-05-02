@@ -114,13 +114,13 @@ particle_cmp(Particle const *a, Particle const *b)
 }
 
 /* Generate a random number between [lower, upper] */
-int
+float
 rfrange(int lower, int upper)
 {
 	lower *= 1000;
 	upper *= 1000;
 
-	return ((rand() % (upper + 1 - lower)) + lower) / 1000;
+	return (float)((rand() % (upper + 1 - lower)) + lower) / 1000;
 }
 
 float
@@ -149,7 +149,6 @@ void *
 apso_work(void *arg)
 {
 	size_t i;
-	float rp, rg;
 	Particle *p;
 	Swarm *s = arg;
 	int score;
@@ -158,13 +157,13 @@ apso_work(void *arg)
 	while ((p = swarm_queue_pop(s))) {
 		/* Update the particle's velocity */
 		for (i = 0; i < s->n_dimension; ++i) {
-			rp = rfrange(0, 1);
-			rg = rfrange(0, 1);
 			/* The magical velocity formula */
-			p->velocity[i] = s->phi * p->velocity[i]
-				+ s->alpha * rp * (p->p_position[i]
+			p->velocity[i] = 
+				//rfrange(0, 1)
+				+ s->phi * p->velocity[i]
+				+ s->alpha * rfrange(0, 1) * (p->p_position[i]
 						- p->position[i])
-				+ s->beta * rg * (swarm_g_position_load(s, i)
+				+ s->beta * rfrange(0, 1) * (swarm_g_position_load(s, i)
 						- p->position[i]);
 		}
 		/* Update the particle's position */
@@ -172,24 +171,22 @@ apso_work(void *arg)
 			p->position[i] += p->velocity[i];
 		/* Evaluate the new fitness of the particle */
 		score = s->fitness(p->position);
-		printf("particle %d:%zu (%f, %f, %f) = %d\n",
+		printf("particle %d:%zu (%f, %f) = %d\n",
 				p->id,
 				p->iter,
 				p->position[0],
 				p->position[1],
-				p->position[2],
 				score);
 		if (score > p->p_score) {
 			memcpy(p->p_position, p->position,
 				sizeof(*p->p_position) * s->n_dimension);
 			p->p_score = score;
-			swarm_g_compare_store(s, score, p->position);
 		}
+		swarm_g_compare_store(s, score, p->position);
 		if (p->iter < s->n_iteration) {
 			p->iter += 1;
 			swarm_queue_push(s, p);
 		}
-		display(s);
 	}
 	return NULL;
 }
@@ -219,7 +216,7 @@ apso(
 	s.beta = beta;
 	s.phi = phi;
 	s.fitness = fitness;
-	s.g_score = 0;
+	s.g_score = INT32_MIN;
 	s.g_position = calloc(n_dimension, sizeof(*s.g_position));
 	s.n_pt = n_particle;
 	s.pt = malloc(sizeof(*s.pt) * n_particle);
@@ -260,10 +257,9 @@ apso(
 			exit(EXIT_FAILURE);
 		}
 	}
-	printf("best position: (%f, %f, %f) = %d\n",
+	printf("best position: (%f, %f) = %d\n",
 			s.g_position[0],
 			s.g_position[1],
-			s.g_position[2],
 			s.g_score);
 	for (i = 0; i < n_particle; ++i) {
 		free(s.pt[i].p_position);
@@ -293,6 +289,13 @@ hidamari_fitness(float const *position)
 }
 
 int
+distance_fitness(float const *position)
+{
+	return -sqrt(pow(10 - position[0], 2) + pow(10 - position[1], 2));
+
+}
+
+int
 main(int argc, char **argv)
 {
 	size_t n_particle;
@@ -305,8 +308,8 @@ main(int argc, char **argv)
 		usage();
 	n_particle = strtol(argv[1], NULL, 10);
 	n_iteration = strtol(argv[2], NULL, 10);
-	best = apso(4, n_iteration, n_particle, 3, 1, 100, 0.4, 0.1, 0.2,
-			hidamari_fitness);
+	best = apso(4, n_iteration, n_particle, 2, -100, 100, 0.3, 0.1, 0.6,
+			distance_fitness);
 	free(best);
 	return 0;
 }
