@@ -580,57 +580,22 @@ hidamari_init(HidamariGame *game)
 	game->ai.planstr = &dbv;
 }
 
-/* void * */
-/* ai_thread_work(void *arg) */
-/* { */
-/* 	HidamariGame *game = arg; */
-/* 	//double weight[3] = {3, 2, 10}; */
-/* 	double weight[3] = {0, 0, 0}; */
+void
+hidamari_update(HidamariGame *game, Button act)
+{
+	double weight[3] = {28.586806, 77.649833, 61.638933};
 
-/* 	for (;;) { */
-/* 		sem_wait(&game->ai.sem_make_plan); */
-/* 		if (AI_THREAD_TERMINATE == atomic_load(&game->ai.msg)) */
-/* 			break; */
-/* 		game->ai.next_planstr = ai_plan(game->ai.region, weight, */
-/* 				&game->field); */
-/* 		atomic_store(&game->ai.msg, AI_THREAD_DONE); */
-/* 	} */
-/* 	return NULL; */
-/* } */
-
-/* void */
-/* hidamari_update(HidamariGame *game, Button act) */
-/* { */
-/* 	Button action = BUTTON_NONE; */
-
-/* 	switch (game->state) { */
-/* 	case GS_MENU: */
-/* 		break; */
-/* 	case GS_GAME_PLAYING: */
-/* 		if (game->ai.planstr && BUTTON_NONE != game->ai.planstr[0]) { */
-/* 			action = game->ai.planstr[0]; */
-/* 			++game->ai.planstr; */
-/* 		} else if (game->ai.planstr && BUTTON_NONE == game->ai.planstr[0]) { */
-/* 			sem_post(&game->ai.sem_make_plan); */
-/* 			game->ai.planstr = NULL; */
-/* 		} else if (AI_THREAD_DONE == atomic_load(&game->ai.msg)) { */
-/* 			game->ai.planstr = game->ai.next_planstr; */
-/* 			atomic_store(&game->ai.msg, AI_THREAD_START); */
-/* 		} */
-/* 		//ai_timer = (ai_timer + 1) % ((rand() % (15 + 1 - 5)) + 5); */
-/* 		if (0 != hidamari_field_update(&game->field, action)) { */
-/* 			game->state = GS_GAME_OVER; */
-/* 			atomic_store(&game->ai.msg, AI_THREAD_TERMINATE); */
-/* 			sem_post(&game->ai.sem_make_plan); */
-/* 			pthread_join(game->ai.thread, NULL); */
-/* 			region_destroy(game->ai.region); */
-/* 		} */
-/* 		break; */
-/* 	case GS_GAME_OVER: */
-/* 		break; */
-/* 	} */
-/* 	buffer_draw_field(&game->buf, &game->field); */
-/* } */
+	if (game->ai.planstr[0] == BUTTON_NONE) {
+		region_clear(game->ai.region);
+		game->ai.planstr = ai_plan(game->ai.region, weight, &game->field);
+	}
+	if (0 != hidamari_field_update(&game->field, game->ai.planstr[0])) {
+		game->state = GS_GAME_OVER;
+		region_destroy(game->ai.region);
+	}
+	++game->ai.planstr;
+	buffer_draw_field(&game->buf, &game->field);
+}
 
 void
 hidamari_pso_update(HidamariGame *game, double weight[3])
