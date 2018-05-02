@@ -12,5 +12,5 @@ LDFLAGS := -lSDL2 -lSDL2_image -lpthread -lm
 
 # C Compiler settings
 CC := cc
-CFLAGS := -O2 -Iinclude -std=c11 -pedantic -Wall -Wextra
+CFLAGS := -O2 -I. -std=c11 -pedantic -Wall -Wextra
 CFLAGS += -O0 -g

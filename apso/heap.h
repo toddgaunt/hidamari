@@ -98,15 +98,15 @@ NAME ## _push(NAME *heap, T elem) \
 	return 0; \
 } \
 \
-static inline T \
-NAME ## _pop(NAME *heap) \
+static inline int \
+NAME ## _pop(NAME *heap, T *ret) \
 { \
 	if (0 == heap->len) \
-		return NULL; \
-	T ret = heap->vec[1]; \
+		return -1; \
+	*ret = heap->vec[1]; \
 	heap->vec[1] = heap->vec[heap->len--]; \
 	NAME ## _move_down(heap, 1); \
-	return ret; \
+	return 0; \
 }
 
 #endif

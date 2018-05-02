@@ -6,9 +6,9 @@
 #include "region.h"
 
 typedef struct {
+	uint8_t *mem;
 	size_t sp;
 	size_t size;
-	uint8_t *mem;
 } Region;
 
 static bool
@@ -54,4 +54,10 @@ void
 region_destroy(void const *region)
 {
 	free((void *)region);
+}
+
+size_t
+region_size()
+{
+	return sizeof(Region);
 }

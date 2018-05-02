@@ -17,4 +17,7 @@ region_create(size_t n);
 void
 region_destroy(void const *region);
 
+size_t
+region_size();
+
 #endif
