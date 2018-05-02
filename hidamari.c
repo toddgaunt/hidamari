@@ -639,9 +639,7 @@ hidamari_pso_update(HidamariGame *game, double weight[3])
 		region_clear(game->ai.region);
 		game->ai.planstr = ai_plan(game->ai.region, weight, &game->field);
 	}
-	/* Cap the score at 100,000. This will guarenteee game termination
-	 * within a reasonable timeframe */
-	if (game->field.score > 100000 || 0 != hidamari_field_update(&game->field, game->ai.planstr[0])) {
+	if (0 != hidamari_field_update(&game->field, game->ai.planstr[0])) {
 		game->state = GS_GAME_OVER;
 		region_destroy(game->ai.region);
 	}

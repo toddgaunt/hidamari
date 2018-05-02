@@ -260,7 +260,7 @@ hidamari_fitness(float const *position)
 	hidamari_init(&game);
 	do {
 		hidamari_pso_update(&game, weight);
-	} while (game.state == GS_GAME_PLAYING);
+	} while (game.state == GS_GAME_PLAYING && game.field.score < 100);
 	return game.field.score;
 }
 
@@ -271,6 +271,7 @@ main(int argc, char **argv)
 	size_t n_iteration;
 	float *best;
 
+	srand(time(NULL));
 	argv0 = argv[0];
 	if (argc != 3)
 		usage();
