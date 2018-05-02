@@ -164,11 +164,6 @@ apso_work(void *arg)
 			p->position[i] += p->velocity[i];
 		/* Evaluate the new fitness of the particle */
 		score = s->fitness(p->position);
-		printf("particle %d:%zu (%f, %f, %f) = %f\n", p->id, p->iter,
-				p->position[0],
-				p->position[1],
-				p->position[2],
-				score);
 		if (score > p->p_score) {
 			memcpy(p->p_position, p->position,
 				sizeof(*p->p_position) * s->n_dimension);
