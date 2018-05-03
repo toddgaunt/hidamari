@@ -311,6 +311,8 @@ clear_lines(HidamariPlayField *field)
 			y += 1;
 		}
 	}
+
+	field->lines += combo;
 	
 	switch (combo) {
 	case 0:
