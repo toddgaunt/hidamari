@@ -28,8 +28,8 @@ hidamari_fitness(float const *position)
 	hidamari_init(&game);
 	do {
 		hidamari_pso_update(&game, weight);
-	} while (game.state == GS_GAME_PLAYING && game.field.score < 5000);
-	return game.field.score;
+	} while (game.state == GS_GAME_PLAYING && game.field.lines < 60000);
+	return game.field.lines;
 }
 
 int
