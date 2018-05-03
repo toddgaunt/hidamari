@@ -7,6 +7,7 @@
 #include "hidamari.h"
 #include "region.h"
 
+#define PLAN_DEPTH 1
 #define DEPTH 2
 
 void
@@ -185,6 +186,10 @@ mkplan(void *region, FieldNode *goal)
 	size_t n_move = 0;
 	size_t i;
 
+	/* Move up the tree to the node where the plan will begin to be made */
+	for (i = 0; i < DEPTH - PLAN_DEPTH; ++i) {
+		goal = goal->parent;
+	}
 	for (fp = goal; fp->parent; fp = fp->parent) {
 		n_move += fp->n_action;
 	}
