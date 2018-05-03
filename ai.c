@@ -91,7 +91,7 @@ expand(void *region, FieldNode **stackp, FieldNode *parent)
  * columns.
  */
 static int
-h1(FieldNode *np)
+h1(HidamariPlayField *field)
 {
 	int top;
 	size_t i, j;
@@ -100,7 +100,7 @@ h1(FieldNode *np)
 
 	for (i = 0; i < HIDAMARI_WIDTH - 1; ++i) {
 		for (j = 0; j < HIDAMARI_HEIGHT; ++j) {
-			if ((np->field.grid[j] & (2 << i)) == (2 << i)) {
+			if ((field->grid[j] & (2 << i)) == (2 << i)) {
 				top = j;
 			}
 		}
@@ -114,7 +114,7 @@ h1(FieldNode *np)
 
 /* Heuristic 2: Calculate the aggregate height of all columns. */
 static int
-h2(FieldNode *np)
+h2(HidamariPlayField *field)
 {
 	int top;
 	size_t i, j;
@@ -122,7 +122,7 @@ h2(FieldNode *np)
 
 	for (i = 2; i < (1 << (HIDAMARI_WIDTH - 1)); i <<= 1) {
 		for (j = 0; j < HIDAMARI_HEIGHT; ++j) {
-			if ((np->field.grid[j] & i) == i) {
+			if ((field->grid[j] & i) == i) {
 				top = j;
 			}
 		}
@@ -135,7 +135,7 @@ h2(FieldNode *np)
  * as any open space with a filled space above it in the same column.
  */
 static int
-h3(FieldNode *np)
+h3(HidamariPlayField *field)
 {
 	int cnt;
 	size_t i, j;
@@ -144,7 +144,7 @@ h3(FieldNode *np)
 	for (i = 0; i < HIDAMARI_WIDTH - 1; ++i) {
 		cnt = 0;
 		for (j = 0; j < HIDAMARI_HEIGHT; ++j) {
-			if ((np->field.grid[j] & (2 << i)) == (2 << i)) {
+			if ((field->grid[j] & (2 << i)) == (2 << i)) {
 				score += cnt;
 				cnt = 0;
 			} else {
@@ -159,13 +159,13 @@ h3(FieldNode *np)
  * is multiplied by a certain weight depending on how valuable it is deemed.
  */
 static int
-evaluate(FieldNode *np, double weight[3])
+evaluate(HidamariPlayField *field, double weight[3])
 {
 	int score = 0;
 
-	score += weight[0] * h1(np);
-	score += weight[1] * h2(np);
-	score += weight[2] * h3(np);
+	score += weight[0] * h1(field);
+	score += weight[1] * h2(field);
+	score += weight[2] * h3(field);
 	return score;
 }
 
@@ -220,7 +220,8 @@ ai_plan(void *region, double weight[3], HidamariPlayField const *init) {
 			/* Evaluate the current goal state for "goodness" */
 			if (!goal) {
 				goal = fp;
-			} else if (evaluate(fp, weight) < evaluate(goal, weight)) {
+			} else if (evaluate(&fp->field, weight)
+			         < evaluate(&goal->field, weight)) {
 				goal = fp;
 			}
 		} else {
