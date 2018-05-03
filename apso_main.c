@@ -49,7 +49,7 @@ main(int argc, char **argv)
 		usage();
 	n_particle = strtol(argv[1], NULL, 10);
 	n_iteration = strtol(argv[2], NULL, 10);
-	best = apso(4, n_iteration, n_particle, 3, -1, 1, 0.0, 0.8, 0.1, 0.2,
+	best = apso(4, n_iteration, n_particle, 3, -1, 1, 0.8, 0.1, 0.2,
 			NULL, hidamari_fitness);
 	printf("best position: (%f, %f, %f)\n",
 			best[0],
