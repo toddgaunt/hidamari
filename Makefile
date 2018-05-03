@@ -4,7 +4,7 @@
 include config.mk
 
 MODULES :=
-SRC := apso.c hidamari.c region.c ai.c
+SRC := sdl2_main.c hidamari.c region.c ai.c
 
 # Project modules
 include $(patsubst %, %/module.mk, $(MODULES))

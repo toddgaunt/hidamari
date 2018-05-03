@@ -17,8 +17,10 @@ usage()
 }
 
 float
-hidamari_fitness(float const *position)
+hidamari_fitness(void *arg, float const *position)
 {
+	(void)arg;
+
 	HidamariGame game;
 	double weight[3];
 
@@ -29,6 +31,8 @@ hidamari_fitness(float const *position)
 	do {
 		hidamari_pso_update(&game, weight);
 	} while (game.state == GS_GAME_PLAYING && game.field.lines < 60000);
+	printf("(%f, %f, %f) = %d\n", position[0], position[1], position[2],
+			game.field.lines);
 	return game.field.lines;
 }
 
@@ -45,8 +49,8 @@ main(int argc, char **argv)
 		usage();
 	n_particle = strtol(argv[1], NULL, 10);
 	n_iteration = strtol(argv[2], NULL, 10);
-	best = apso(4, n_iteration, n_particle, 3, 0, 1, 0.4, 0.1, 0.2,
-			hidamari_fitness);
+	best = apso(4, n_iteration, n_particle, 3, -1, 1, 0.0, 0.8, 0.1, 0.2,
+			NULL, hidamari_fitness);
 	printf("best position: (%f, %f, %f)\n",
 			best[0],
 			best[1],
