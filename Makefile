@@ -3,7 +3,7 @@
 # Project configuration
 include config.mk
 
-MODULES := apso
+MODULES :=
 SRC := apso.c hidamari.c region.c ai.c
 
 # Project modules

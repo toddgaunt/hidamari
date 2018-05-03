@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <apso.h>
 
 #include "hidamari.h"
-#include "apso.h"
 
 char *argv0;
 
