@@ -8,7 +8,9 @@ LIBPREFIX := $(PREFIX)/lib
 MANPREFIX := $(PREFIX)/man
 
 # Linking flags
-LDFLAGS := -lSDL2 -lSDL2_image -lapso -lpthread -lm
+LDFLAGS := -lSDL2 -lSDL2_image -lpthread -lm
+#LDFLAGS := -lpthread -lm
+#LDFLAGS := -lSDL2 -lSDL2_image -lapso -lpthread -lm
 
 # C Compiler settings
 CC := cc
