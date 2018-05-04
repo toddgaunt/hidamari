@@ -585,7 +585,10 @@ hidamari_init(HidamariGame *game)
 void
 hidamari_update(HidamariGame *game, Button act)
 {
-	double weight[3] = {28.586806, 77.649833, 61.638933};
+	//double weight[3] = {28.586806, 77.649833, 61.638933};
+	//double weight[3] = {1.487517, 4.727170, 3.072305};
+	//double weight[3] = {0.3146738, 1, 0.649924};
+	double weight[3] = {0.848058, 2.304684, 1.405450};
 
 	if (game->ai.planstr[0] == BUTTON_NONE) {
 		region_clear(game->ai.region);
