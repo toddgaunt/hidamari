@@ -1,6 +1,7 @@
 # Hidamari
 Hidamari is a small implementation of a certain falling-block game that aims to
-be as official-guideline compliant as possible.
+be as official-guideline compliant as possible. At the moement only AI controls
+work i.e. te game isn't actually playable.
 
 #### Controls
 | Action                   | Key                               |
@@ -12,6 +13,8 @@ be as official-guideline compliant as possible.
 | rotate counter-clockwise | q, u, left-control, right-control |
 | hard drop                | space, return                     |
 
-#### Demo
+#### Articles/Demos
+
+[2018-04-26](http://www.lunargarden.space/article/4.html)
 
 [2018-02-20](http://lunargarden.space/files/2018-02-15/hidamari_demo.webm)
