@@ -31,8 +31,6 @@ hidamari_fitness(void *arg, float const *position)
 	do {
 		hidamari_pso_update(&game, weight);
 	} while (game.state == GS_GAME_PLAYING && game.field.lines < 60000);
-	printf("(%f, %f, %f) = %d\n", position[0], position[1], position[2],
-			game.field.lines);
 	return game.field.lines;
 }
 

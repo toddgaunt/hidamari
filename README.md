@@ -1,6 +1,6 @@
 # Hidamari
 Hidamari is a small implementation of a certain falling-block game that aims to
-be as official-guideline compliant as possible. At the moement only AI controls
+be as official-guideline compliant as possible. At the moment only AI controls
 work i.e. te game isn't actually playable.
 
 #### Controls
