@@ -11,10 +11,10 @@
 #define DEPTH 2
 
 void
-hidamari_field_init(HidamariPlayField *field);
+field_init(HidamariPlayField *field);
 
 int
-hidamari_field_update(HidamariPlayField *field, Button act);
+field_update(HidamariPlayField *field, Button act);
 
 /* Allocate a new node with a copy of _init_ as its state */
 FieldNode *
@@ -47,7 +47,7 @@ derive(void *region, FieldNode **stackp, FieldNode *parent,
 	child->parent = parent;
 	child->g = parent->g + 1;
 	for (i = 0; i < n_action; ++i) {
-		hidamari_field_update(&child->field, action[i]);
+		field_update(&child->field, action[i]);
 	}
 	child->next = *stackp;
 	*stackp = child;
@@ -170,8 +170,10 @@ evaluate(HidamariPlayField *field, double weight[3])
 	return score;
 }
 
-/* ---
+/*
+ *
  * The Main loop and plan deviser.
+ *
  */
 
 /* Given a FieldNode, trace back up the tree it was created from to allocate

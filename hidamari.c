@@ -493,7 +493,7 @@ rotate_current(HidamariPlayField *field, Button dir)
 }
 
 void
-hidamari_field_init(HidamariPlayField *field)
+field_init(HidamariPlayField *field)
 {
 	size_t i;
 
@@ -515,7 +515,7 @@ hidamari_field_init(HidamariPlayField *field)
 }
 
 int
-hidamari_field_update(HidamariPlayField *field, Button act)
+field_update(HidamariPlayField *field, Button act)
 {
 	Hidamari tmp;
 
@@ -543,7 +543,6 @@ hidamari_field_update(HidamariPlayField *field, Button act)
 
 	field->gravity_timer += gravity_level[field->level];
 	
-	/* If its not time for an update, then return early */
 	if (field->gravity_timer >= drop_time) {
 		move_current(field, BUTTON_DOWN);
 		field->gravity_timer = 0.0;
@@ -559,10 +558,16 @@ hidamari_field_update(HidamariPlayField *field, Button act)
 			get_next_hidamari(field);
 			field->slide_timer = 0;
 			if (is_game_over(field))
-				return 1;
+				return HIDAMARI_GS_GAME_OVER;
 		}
 	}
-	return 0;
+	return HIDAMARI_GS_GAME_PLAYING;
+}
+
+int
+main_menu(HidamariMenu *menu, Button act)
+{
+	return HIDAMARI_GS_GAME_PLAYING;
 }
 
 /*
@@ -575,11 +580,12 @@ hidamari_init(HidamariGame *game)
 	static Button const dbv = BUTTON_NONE;
 
 	memset(game, 0, sizeof(*game));
-	game->state = GS_GAME_PLAYING;
+	game->state = HIDAMARI_GS_GAME_PLAYING;
 	buffer_init(&game->buf);
-	hidamari_field_init(&game->field);
+	field_init(&game->field);
 	game->ai.region = region_create(ai_size_requirement());
 	game->ai.planstr = &dbv;
+	game->ai.active = true;
 }
 
 void
@@ -590,16 +596,31 @@ hidamari_update(HidamariGame *game, Button act)
 	//double weight[3] = {0.3146738, 1, 0.649924};
 	double weight[3] = {0.848058, 2.304684, 1.405450};
 
-	if (game->ai.planstr[0] == BUTTON_NONE) {
-		region_clear(game->ai.region);
-		game->ai.planstr = ai_plan(game->ai.region, weight, &game->field);
+	switch(game->state) {
+	case HIDAMARI_GS_MAIN_MENU:
+		game->state = main_menu(&game->menu, act);
+		break;
+	case HIDAMARI_GS_OPTION_MENU:
+		//game->state = option_menu(game, act);
+		break;
+	case HIDAMARI_GS_GAME_PLAYING:
+		if (game->ai.active) {
+			if (game->ai.planstr[0] == BUTTON_NONE) {
+				region_clear(game->ai.region);
+				game->ai.planstr = ai_plan(game->ai.region, weight, &game->field);
+			}
+			game->state = field_update(&game->field, act);
+			if (HIDAMARI_GS_GAME_OVER == game->state)
+				region_destroy(game->ai.region);
+			++game->ai.planstr;
+		} else {
+			game->state = field_update(&game->field, act);
+		}
+		buffer_draw_field(&game->buf, &game->field);
+		break;
+	case HIDAMARI_GS_GAME_OVER:
+		break;
 	}
-	if (0 != hidamari_field_update(&game->field, game->ai.planstr[0])) {
-		game->state = GS_GAME_OVER;
-		region_destroy(game->ai.region);
-	}
-	++game->ai.planstr;
-	buffer_draw_field(&game->buf, &game->field);
 }
 
 void
@@ -609,8 +630,8 @@ hidamari_pso_update(HidamariGame *game, double weight[3])
 		region_clear(game->ai.region);
 		game->ai.planstr = ai_plan(game->ai.region, weight, &game->field);
 	}
-	if (0 != hidamari_field_update(&game->field, game->ai.planstr[0])) {
-		game->state = GS_GAME_OVER;
+	if (0 != field_update(&game->field, game->ai.planstr[0])) {
+		game->state = HIDAMARI_GS_GAME_OVER;
 		region_destroy(game->ai.region);
 	}
 	++game->ai.planstr;

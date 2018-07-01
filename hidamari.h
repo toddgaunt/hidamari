@@ -19,16 +19,14 @@
 #define HIDAMARI_BUFFER_HEIGHT (HIDAMARI_HEIGHT_VISIBLE + 3 + 3)
 #define HIDAMARI_BUFFER_WIDTH HIDAMARI_WIDTH
 
-/* Current state of the game */
-typedef uint8_t HidamariGameState;
-enum {
-	GS_MENU,
-	GS_GAME_PLAYING,
-	GS_GAME_OVER,
-};
+typedef struct Hidamari Hidamari;
+typedef struct HidamariGame HidamariGame;
+typedef struct HidamariPlayField HidamariPlayField;
+typedef struct HidamariAIState HidamariAIState;
+typedef struct HidamariBuffer HidamariBuffer;
+typedef struct HidamariMenu HidamariMenu;
 
-typedef uint8_t Button;
-enum {
+typedef enum {
 	BUTTON_NONE = 0,
 	/* D-pad */
 	BUTTON_UP,
@@ -44,10 +42,17 @@ enum {
 	BUTTON_X,
 	BUTTON_Y,
 	BUTTON_LAST, /* Not an actual action, just used for enum length */
-};
+} Button;
 
-typedef uint8_t HidamariTile;
-enum {
+/* Current state of the game */
+typedef enum {
+	HIDAMARI_GS_MAIN_MENU,
+	HIDAMARI_GS_OPTION_MENU,
+	HIDAMARI_GS_GAME_PLAYING,
+	HIDAMARI_GS_GAME_OVER,
+} HidamariGameState;
+
+typedef enum {
 	HIDAMARI_TILE_0,
 	HIDAMARI_TILE_1,
 	HIDAMARI_TILE_2,
@@ -74,10 +79,9 @@ enum {
 	HIDAMARI_TILE_Z,
 	HIDAMARI_TILE_WALL,
 	HIDAMARI_TILE_LAST, /* Not an actual tile, just used for enum length */
-};
+} HidamariTile;
 
-typedef uint8_t HidamariShape;
-enum {
+typedef enum {
 	HIDAMARI_I,        
 	HIDAMARI_J,        
 	HIDAMARI_L,        
@@ -87,20 +91,23 @@ enum {
 	HIDAMARI_Z,        
 	HIDAMARI_LAST, /* Not an actual piece, just used for enum length. Also
 			  can be used as a NULL value for hidamaris */
-};
+} HidamariShape;
 
-typedef struct {
+struct HidamariBuffer {
 	HidamariTile tile[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
 	u8 color[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT][3];
-} HidamariBuffer;
+};
 
-typedef struct {
+struct Hidamari {
 	Vec2 pos; /* Top-left position */
 	HidamariShape shape : 4;
 	u8 orientation : 3;
-} Hidamari;
+};
 
-typedef struct HidamariPlayField HidamariPlayField;
+struct HidamariMenu {
+	uint8_t cursor[3]; /* Maximum nested menu level is three */
+};
+
 struct HidamariPlayField {
 	/* Scoring */
 	u8 level;
@@ -118,18 +125,21 @@ struct HidamariPlayField {
 	u12 grid[HIDAMARI_HEIGHT]; /* Represents static Hidamaries */
 };
 
-typedef struct HidamariAIState HidamariAIState;
 struct HidamariAIState {
+	bool active;
 	void *region;
 	Button const *planstr;
 };
 
-typedef struct {
+struct HidamariGame {
 	HidamariGameState state;
 	HidamariBuffer buf;
-	HidamariPlayField field;
+	union {
+		HidamariMenu menu;
+		HidamariPlayField field;
+	};
 	HidamariAIState ai;
-} HidamariGame;
+};
 
 /* Initialize the playfield, and allocate the global region used by all
  * games. Also start the AI-thread. */
