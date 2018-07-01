@@ -19,6 +19,10 @@
 #define HIDAMARI_BUFFER_HEIGHT (HIDAMARI_HEIGHT_VISIBLE + 3 + 3)
 #define HIDAMARI_BUFFER_WIDTH HIDAMARI_WIDTH
 
+typedef uint8_t Button;
+typedef uint8_t HidamariTile;
+typedef uint8_t HidamariShape;
+typedef uint8_t HidamariGameState;
 typedef struct Hidamari Hidamari;
 typedef struct HidamariGame HidamariGame;
 typedef struct HidamariPlayField HidamariPlayField;
@@ -26,7 +30,7 @@ typedef struct HidamariAIState HidamariAIState;
 typedef struct HidamariBuffer HidamariBuffer;
 typedef struct HidamariMenu HidamariMenu;
 
-typedef enum {
+enum {
 	BUTTON_NONE = 0,
 	/* D-pad */
 	BUTTON_UP,
@@ -42,17 +46,9 @@ typedef enum {
 	BUTTON_X,
 	BUTTON_Y,
 	BUTTON_LAST, /* Not an actual action, just used for enum length */
-} Button;
+};
 
-/* Current state of the game */
-typedef enum {
-	HIDAMARI_GS_MAIN_MENU,
-	HIDAMARI_GS_OPTION_MENU,
-	HIDAMARI_GS_GAME_PLAYING,
-	HIDAMARI_GS_GAME_OVER,
-} HidamariGameState;
-
-typedef enum {
+enum {
 	HIDAMARI_TILE_0,
 	HIDAMARI_TILE_1,
 	HIDAMARI_TILE_2,
@@ -79,9 +75,9 @@ typedef enum {
 	HIDAMARI_TILE_Z,
 	HIDAMARI_TILE_WALL,
 	HIDAMARI_TILE_LAST, /* Not an actual tile, just used for enum length */
-} HidamariTile;
+};
 
-typedef enum {
+enum {
 	HIDAMARI_I,        
 	HIDAMARI_J,        
 	HIDAMARI_L,        
@@ -91,7 +87,15 @@ typedef enum {
 	HIDAMARI_Z,        
 	HIDAMARI_LAST, /* Not an actual piece, just used for enum length. Also
 			  can be used as a NULL value for hidamaris */
-} HidamariShape;
+};
+
+/* Current state of the game */
+enum {
+	HIDAMARI_GS_MAIN_MENU,
+	HIDAMARI_GS_OPTION_MENU,
+	HIDAMARI_GS_GAME_PLAYING,
+	HIDAMARI_GS_GAME_OVER,
+};
 
 struct HidamariBuffer {
 	HidamariTile tile[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
@@ -134,10 +138,8 @@ struct HidamariAIState {
 struct HidamariGame {
 	HidamariGameState state;
 	HidamariBuffer buf;
-	union {
-		HidamariMenu menu;
-		HidamariPlayField field;
-	};
+	HidamariMenu menu;
+	HidamariPlayField field;
 	HidamariAIState ai;
 };
 

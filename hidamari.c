@@ -609,7 +609,7 @@ hidamari_update(HidamariGame *game, Button act)
 				region_clear(game->ai.region);
 				game->ai.planstr = ai_plan(game->ai.region, weight, &game->field);
 			}
-			game->state = field_update(&game->field, act);
+			game->state = field_update(&game->field, game->ai.planstr[0]);
 			if (HIDAMARI_GS_GAME_OVER == game->state)
 				region_destroy(game->ai.region);
 			++game->ai.planstr;
