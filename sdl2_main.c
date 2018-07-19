@@ -96,6 +96,11 @@ main()
 					goto endgame;
 				case SDL_KEYDOWN:
 					switch(event.key.keysym.sym) {
+					case SDLK_w:
+					case SDLK_i:
+					case SDLK_UP:
+						button = BUTTON_UP;
+						break;
 					case SDLK_s:
 					case SDLK_k:
 					case SDLK_DOWN:
@@ -113,14 +118,12 @@ main()
 						break;
 					case SDLK_e:
 					case SDLK_o:
-					case SDLK_UP:
 					case SDLK_x:
 						button = BUTTON_R;
 						break;
 					case SDLK_q:
 					case SDLK_u:
-					case SDLK_RCTRL:
-					case SDLK_LCTRL:
+					case SDLK_z:
 						button = BUTTON_L;
 						break;
 					case SDLK_SPACE:
@@ -137,6 +140,7 @@ main()
 			acc -= dt;
 			button = BUTTON_NONE;
 		}
+		usleep((dt - acc) * 1000);
 		render(renderer, tileset_hw, &game.buf);
 	}
 endgame:
