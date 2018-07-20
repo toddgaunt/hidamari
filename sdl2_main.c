@@ -97,12 +97,12 @@ main()
 				case SDL_KEYDOWN:
 					switch(event.key.keysym.sym) {
 					case SDLK_w:
-					case SDLK_i:
+					case SDLK_k:
 					case SDLK_UP:
 						button = BUTTON_UP;
 						break;
 					case SDLK_s:
-					case SDLK_k:
+					case SDLK_j:
 					case SDLK_DOWN:
 						button = BUTTON_DOWN;
 						break;
@@ -112,18 +112,19 @@ main()
 						button = BUTTON_RIGHT;
 						break;
 					case SDLK_a:
-					case SDLK_j:
+					case SDLK_h:
 					case SDLK_LEFT:
 						button = BUTTON_LEFT;
 						break;
 					case SDLK_e:
-					case SDLK_o:
+					case SDLK_i:
 					case SDLK_x:
 						button = BUTTON_R;
 						break;
 					case SDLK_q:
 					case SDLK_u:
 					case SDLK_z:
+					case SDLK_LCTRL:
 						button = BUTTON_L;
 						break;
 					case SDLK_SPACE:

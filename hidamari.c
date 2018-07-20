@@ -267,7 +267,7 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 }
 
 static void
-draw_main_menu(HidamariBuffer *buf, uint8_t *cursor)
+draw_main_menu(HidamariBuffer *buf, HidamariGame *game)
 {
 	size_t x, y;
 
@@ -293,52 +293,72 @@ draw_main_menu(HidamariBuffer *buf, uint8_t *cursor)
 	buf->tile[8][HIDAMARI_BUFFER_HEIGHT - 3] = HIDAMARI_TILE_CHAR_R;
 	buf->tile[9][HIDAMARI_BUFFER_HEIGHT - 3] = HIDAMARI_TILE_CHAR_I;
 
-	for (x = 2; x < HIDAMARI_BUFFER_WIDTH - 2; ++x) {
-		for (y = HIDAMARI_BUFFER_HEIGHT - 9; y < HIDAMARI_BUFFER_HEIGHT - 6; ++y) {
-			if (0 == *cursor) {
-				buf->tile[x][y] = HIDAMARI_TILE_I;
-			} else {
-				buf->tile[x][y] = HIDAMARI_TILE_PLAIN;
-			}
+	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_P;
+	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_L;
+	buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_A;
+	buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_Y;
+
+	buf->tile[3][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_O;
+	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_P;
+	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_T;
+	buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_I;
+	buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_O;
+	buf->tile[8][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_N;
+
+	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_Q;
+	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_U;
+	buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_I;
+	buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_T;
+}
+
+static void
+draw_option_menu(HidamariBuffer *buf, HidamariGame *game)
+{
+	size_t x, y;
+
+	/* Draw the backdrop */
+	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
+		for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
+			buf->tile[x][y] = HIDAMARI_TILE_WALL;
 		}
 	}
 
-	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 8] = HIDAMARI_TILE_CHAR_P;
-	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 8] = HIDAMARI_TILE_CHAR_L;
-	buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 8] = HIDAMARI_TILE_CHAR_A;
-	buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 8] = HIDAMARI_TILE_CHAR_Y;
-
-	for (x = 2; x < HIDAMARI_BUFFER_WIDTH - 2; ++x) {
-		for (y = HIDAMARI_BUFFER_HEIGHT - 14; y < HIDAMARI_BUFFER_HEIGHT - 11; ++y) {
-			if (1 == *cursor) {
-				buf->tile[x][y] = HIDAMARI_TILE_I;
-			} else {
-				buf->tile[x][y] = HIDAMARI_TILE_PLAIN;
-			}
+	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
+		for (y = HIDAMARI_BUFFER_HEIGHT - 4; y < HIDAMARI_BUFFER_HEIGHT - 1; ++y) {
+			buf->tile[x][y] = HIDAMARI_TILE_PLAIN;
 		}
 	}
 
-	buf->tile[3][HIDAMARI_BUFFER_HEIGHT - 13] = HIDAMARI_TILE_CHAR_O;
-	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 13] = HIDAMARI_TILE_CHAR_P;
-	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 13] = HIDAMARI_TILE_CHAR_T;
-	buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 13] = HIDAMARI_TILE_CHAR_I;
-	buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 13] = HIDAMARI_TILE_CHAR_O;
-	buf->tile[8][HIDAMARI_BUFFER_HEIGHT - 13] = HIDAMARI_TILE_CHAR_N;
+	buf->tile[3][HIDAMARI_BUFFER_HEIGHT - 3] = HIDAMARI_TILE_CHAR_O;
+	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 3] = HIDAMARI_TILE_CHAR_P;
+	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 3] = HIDAMARI_TILE_CHAR_T;
+	buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 3] = HIDAMARI_TILE_CHAR_I;
+	buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 3] = HIDAMARI_TILE_CHAR_O;
+	buf->tile[8][HIDAMARI_BUFFER_HEIGHT - 3] = HIDAMARI_TILE_CHAR_N;
 
-	for (x = 2; x < HIDAMARI_BUFFER_WIDTH - 2; ++x) {
-		for (y = HIDAMARI_BUFFER_HEIGHT - 19; y < HIDAMARI_BUFFER_HEIGHT - 16; ++y) {
-			if (2 == *cursor) {
-				buf->tile[x][y] = HIDAMARI_TILE_I;
-			} else {
-				buf->tile[x][y] = HIDAMARI_TILE_PLAIN;
-			}
-		}
+	buf->tile[3][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_A;
+	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_I;
+	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_SPACE;
+	if (game->ai.active) {
+		buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_O;
+		buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_N;
+	} else {
+		buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_O;
+		buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_F;
+		buf->tile[8][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_F;
 	}
 
-	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 18] = HIDAMARI_TILE_CHAR_Q;
-	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 18] = HIDAMARI_TILE_CHAR_U;
-	buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 18] = HIDAMARI_TILE_CHAR_I;
-	buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 18] = HIDAMARI_TILE_CHAR_T;
+	buf->tile[3][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_O;
+	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_P;
+	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_T;
+	buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_I;
+	buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_O;
+	buf->tile[8][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_N;
+
+	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_B;
+	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_A;
+	buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_C;
+	buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_K;
 }
 
 /* Shift all lines above a certain y value down by one */
@@ -621,8 +641,10 @@ field_update(HidamariPlayField *field, Button act)
 }
 
 int
-main_menu(uint8_t *cursor, Button act)
+main_menu(HidamariGame *game, Button act)
 {
+	uint8_t *cursor = &game->cursor[HIDAMARI_MAIN_CURSOR];
+
 	switch (act) {
 		case BUTTON_UP:
 			if (0 == *cursor) {
@@ -637,6 +659,7 @@ main_menu(uint8_t *cursor, Button act)
 		case BUTTON_B:
 			switch (*cursor) {
 			case 0:
+				field_init(&game->field);
 				return HIDAMARI_GS_GAME_PLAYING;
 			case 1:
 				return HIDAMARI_GS_OPTION_MENU;
@@ -648,9 +671,33 @@ main_menu(uint8_t *cursor, Button act)
 }
 
 int
-option_menu(uint8_t *cursor, Button act)
+option_menu(HidamariGame *game, Button act)
 {
-	return HIDAMARI_GS_GAME_PLAYING;
+	uint8_t *cursor = &game->cursor[HIDAMARI_OPTION_CURSOR];
+
+	switch (act) {
+		case BUTTON_UP:
+			if (0 == *cursor) {
+				*cursor = 2;
+			} else {
+				*cursor = *cursor - 1;
+			}
+			break;
+		case BUTTON_DOWN:
+			*cursor = (*cursor + 1) % 3;
+			break;
+		case BUTTON_B:
+			switch (*cursor) {
+			case 0:
+				game->ai.active = !game->ai.active;
+				return HIDAMARI_GS_OPTION_MENU;
+			case 1:
+				return HIDAMARI_GS_OPTION_MENU;
+			case 2:
+				return HIDAMARI_GS_MAIN_MENU;
+			}
+	}
+	return HIDAMARI_GS_OPTION_MENU;
 }
 
 /*
@@ -664,10 +711,9 @@ hidamari_init(HidamariGame *game)
 
 	memset(game, 0, sizeof(*game));
 	game->state = HIDAMARI_GS_MAIN_MENU;
-	field_init(&game->field);
 	game->ai.region = region_create(ai_size_requirement());
 	game->ai.planstr = &dbv;
-	game->ai.active = true;
+	game->ai.active = false;
 }
 
 void
@@ -680,11 +726,12 @@ hidamari_update(HidamariGame *game, Button act)
 
 	switch(game->state) {
 	case HIDAMARI_GS_MAIN_MENU:
-		game->state = main_menu(&game->menu_cursor[0], act);
-		draw_main_menu(&game->buf, &game->menu_cursor[0]);
+		game->state = main_menu(game, act);
+		draw_main_menu(&game->buf, game);
 		break;
 	case HIDAMARI_GS_OPTION_MENU:
-		game->state = option_menu(&game->menu_cursor[1], act);
+		game->state = option_menu(game, act);
+		draw_option_menu(&game->buf, game);
 		break;
 	case HIDAMARI_GS_GAME_PLAYING:
 		if (game->ai.active) {
@@ -702,6 +749,7 @@ hidamari_update(HidamariGame *game, Button act)
 		draw_field(&game->buf, &game->field);
 		break;
 	case HIDAMARI_GS_GAME_OVER:
+		game->state = HIDAMARI_GS_MAIN_MENU;
 		break;
 	}
 }

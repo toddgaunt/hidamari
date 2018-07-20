@@ -19,6 +19,10 @@
 #define HIDAMARI_BUFFER_HEIGHT (HIDAMARI_HEIGHT_VISIBLE + 3 + 3)
 #define HIDAMARI_BUFFER_WIDTH HIDAMARI_WIDTH
 
+/* Cursor index */
+#define HIDAMARI_MAIN_CURSOR 0
+#define HIDAMARI_OPTION_CURSOR 1
+
 typedef uint8_t Button;
 typedef uint8_t HidamariTile;
 typedef uint8_t HidamariShape;
@@ -167,7 +171,7 @@ struct HidamariAIState {
 struct HidamariGame {
 	HidamariGameState state;
 	HidamariBuffer buf;
-	uint8_t menu_cursor[2];
+	uint8_t cursor[2];
 	HidamariPlayField field;
 	HidamariAIState ai;
 };
