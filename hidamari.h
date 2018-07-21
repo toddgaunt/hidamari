@@ -27,6 +27,7 @@ typedef uint8_t Button;
 typedef uint8_t HidamariTile;
 typedef uint8_t HidamariShape;
 typedef uint8_t HidamariGameState;
+typedef uint8_t HidamariAISkill;
 typedef struct Hidamari Hidamari;
 typedef struct HidamariGame HidamariGame;
 typedef struct HidamariPlayField HidamariPlayField;
@@ -134,6 +135,13 @@ enum {
 	HIDAMARI_GS_GAME_OVER,
 };
 
+enum {
+	HIDAMARI_AI_POOR,
+	HIDAMARI_AI_NORMAL,
+	HIDAMARI_AI_SKILLED,
+	HIDAMARI_AI_GODLIKE,
+};
+
 struct HidamariBuffer {
 	HidamariTile tile[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
 	u8 color[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT][3];
@@ -166,6 +174,7 @@ struct HidamariAIState {
 	bool active;
 	void *region;
 	Button const *planstr;
+	HidamariAISkill skill;
 };
 
 struct HidamariGame {

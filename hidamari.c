@@ -190,6 +190,16 @@ buf_set(HidamariBuffer *buf, size_t x, size_t y, HidamariTile tile, u8 const col
 	buf->color[x][y][2] = color[2];
 }
 
+static inline void
+buf_write_cstr(HidamariBuffer *buf, size_t x, size_t y, char const *str)
+{
+	size_t i;
+
+	for (i = 0; i < strlen(str); ++i) {
+		buf->tile[x + i][y] = str[i] - 33;
+	}
+}
+
 static void
 draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 {
@@ -284,38 +294,15 @@ draw_main_menu(HidamariBuffer *buf, HidamariGame *game)
 			buf->tile[x][y] = HIDAMARI_TILE_WALL;
 		}
 	}
-
 	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
 		for (y = HIDAMARI_BUFFER_HEIGHT - 4; y < HIDAMARI_BUFFER_HEIGHT - 1; ++y) {
 			buf_set(buf, x, y, HIDAMARI_TILE_SPACE, color);
 		}
 	}
-
-	buf_set(buf, 2, HIDAMARI_BUFFER_HEIGHT - 3, HIDAMARI_TILE_CHAR_H, color);
-	buf_set(buf, 3, HIDAMARI_BUFFER_HEIGHT - 3, HIDAMARI_TILE_CHAR_I, color);
-	buf_set(buf, 4, HIDAMARI_BUFFER_HEIGHT - 3, HIDAMARI_TILE_CHAR_D, color);
-	buf_set(buf, 5, HIDAMARI_BUFFER_HEIGHT - 3, HIDAMARI_TILE_CHAR_A, color);
-	buf_set(buf, 6, HIDAMARI_BUFFER_HEIGHT - 3, HIDAMARI_TILE_CHAR_M, color);
-	buf_set(buf, 7, HIDAMARI_BUFFER_HEIGHT - 3, HIDAMARI_TILE_CHAR_A, color);
-	buf_set(buf, 8, HIDAMARI_BUFFER_HEIGHT - 3, HIDAMARI_TILE_CHAR_R, color);
-	buf_set(buf, 9, HIDAMARI_BUFFER_HEIGHT - 3, HIDAMARI_TILE_CHAR_I, color);
-
-	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_P;
-	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_L;
-	buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_A;
-	buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_Y;
-
-	buf->tile[3][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_O;
-	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_P;
-	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_T;
-	buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_I;
-	buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_O;
-	buf->tile[8][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_N;
-
-	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_Q;
-	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_U;
-	buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_I;
-	buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_T;
+	buf_write_cstr(buf, 2, HIDAMARI_BUFFER_HEIGHT - 3, "HIDAMARI");
+	buf_write_cstr(buf, 4, HIDAMARI_BUFFER_HEIGHT - 7, "PLAY");
+	buf_write_cstr(buf, 3, HIDAMARI_BUFFER_HEIGHT - 9, "OPTION");
+	buf_write_cstr(buf, 4, HIDAMARI_BUFFER_HEIGHT - 11, "QUIT");
 }
 
 static void
@@ -330,43 +317,33 @@ draw_option_menu(HidamariBuffer *buf, HidamariGame *game)
 			buf->tile[x][y] = HIDAMARI_TILE_WALL;
 		}
 	}
-
 	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
 		for (y = HIDAMARI_BUFFER_HEIGHT - 4; y < HIDAMARI_BUFFER_HEIGHT - 1; ++y) {
 			buf->tile[x][y] = HIDAMARI_TILE_SPACE;
 		}
 	}
-
-	buf_set(buf, 3, HIDAMARI_BUFFER_HEIGHT - 3, HIDAMARI_TILE_CHAR_O, color);
-	buf_set(buf, 4, HIDAMARI_BUFFER_HEIGHT - 3, HIDAMARI_TILE_CHAR_P, color);
-	buf_set(buf, 5, HIDAMARI_BUFFER_HEIGHT - 3, HIDAMARI_TILE_CHAR_T, color);
-	buf_set(buf, 6, HIDAMARI_BUFFER_HEIGHT - 3, HIDAMARI_TILE_CHAR_I, color);
-	buf_set(buf, 7, HIDAMARI_BUFFER_HEIGHT - 3, HIDAMARI_TILE_CHAR_O, color);
-	buf_set(buf, 8, HIDAMARI_BUFFER_HEIGHT - 3, HIDAMARI_TILE_CHAR_N, color);
-
-	buf->tile[3][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_A;
-	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_I;
-	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_SPACE;
+	buf_write_cstr(buf, 3, HIDAMARI_BUFFER_HEIGHT - 3, "OPTION");
+	buf_write_cstr(buf, 3, HIDAMARI_BUFFER_HEIGHT - 7, "AI ");
 	if (game->ai.active) {
-		buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_O;
-		buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_N;
+		buf_write_cstr(buf, 6, HIDAMARI_BUFFER_HEIGHT - 7, "ON");
 	} else {
-		buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_O;
-		buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_F;
-		buf->tile[8][HIDAMARI_BUFFER_HEIGHT - 7] = HIDAMARI_TILE_CHAR_F;
+		buf_write_cstr(buf, 6, HIDAMARI_BUFFER_HEIGHT - 7, "OFF");
 	}
-
-	buf->tile[3][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_O;
-	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_P;
-	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_T;
-	buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_I;
-	buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_O;
-	buf->tile[8][HIDAMARI_BUFFER_HEIGHT - 9] = HIDAMARI_TILE_CHAR_N;
-
-	buf->tile[4][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_B;
-	buf->tile[5][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_A;
-	buf->tile[6][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_C;
-	buf->tile[7][HIDAMARI_BUFFER_HEIGHT - 11] = HIDAMARI_TILE_CHAR_K;
+	switch (game->ai.skill) {
+		case HIDAMARI_AI_POOR:
+			buf_write_cstr(buf, 4, HIDAMARI_BUFFER_HEIGHT - 9, "POOR");
+			break;
+		case HIDAMARI_AI_NORMAL:
+			buf_write_cstr(buf, 3, HIDAMARI_BUFFER_HEIGHT - 9, "NORMAL");
+			break;
+		case HIDAMARI_AI_SKILLED:
+			buf_write_cstr(buf, 2, HIDAMARI_BUFFER_HEIGHT - 9, "SKILLED");
+			break;
+		case HIDAMARI_AI_GODLIKE:
+			buf_write_cstr(buf, 2, HIDAMARI_BUFFER_HEIGHT - 9, "GODLIKE");
+			break;
+	}
+	buf_write_cstr(buf, 4, HIDAMARI_BUFFER_HEIGHT - 11, "BACK");
 }
 
 /* Shift all lines above a certain y value down by one */
