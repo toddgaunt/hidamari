@@ -201,7 +201,7 @@ buf_write_cstr(HidamariBuffer *buf, size_t x, size_t y, char const *str)
 }
 
 static void
-draw_field(HidamariBuffer *buf, HidamariPlayField *field)
+draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, HidamariPlayField *field)
 {
 	size_t i;
 	size_t x, y;
@@ -209,12 +209,12 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 
 	/* Draw the borders */
 	for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
-		buf->tile[0][y] = HIDAMARI_TILE_WALL;
-		buf->tile[HIDAMARI_BUFFER_WIDTH - 1][y] = HIDAMARI_TILE_WALL;
+		buf->tile[x_offset][y_offset + y] = HIDAMARI_TILE_WALL;
+		buf->tile[x_offset + HIDAMARI_WIDTH - 1][y_offset + y] = HIDAMARI_TILE_WALL;
 	}
 
 	for (x = 1; x < HIDAMARI_BUFFER_WIDTH - 1; ++x) {
-		buf->tile[x][0] = HIDAMARI_TILE_WALL;
+		buf->tile[x_offset + x][y_offset] = HIDAMARI_TILE_WALL;
 	}
 
 	/* Draw the next piece prievew area */
@@ -222,19 +222,20 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 		for (y = HIDAMARI_HEIGHT_VISIBLE + 3; y < HIDAMARI_HEIGHT_VISIBLE + 6; ++y) {
 			if (HIDAMARI_HEIGHT_VISIBLE + 4 == y
 			|| HIDAMARI_HEIGHT_VISIBLE + 3 == y) {
-				buf->tile[x][y] = HIDAMARI_TILE_SPACE;
+				buf->tile[x_offset + x][y_offset + y] = HIDAMARI_TILE_SPACE;
 			} else {
-				buf->tile[x][y] = HIDAMARI_TILE_WALL;
+				buf->tile[x_offset + x][y_offset + y] = HIDAMARI_TILE_WALL;
 			}
 		}
 	}
 
 	/* Draw the actual next piece */
 	for (i = 0; i < 4; ++i) {
-		x = HIDAMARI_WIDTH / 2 - 2 + hidamari_orientation[field->next]
+		x = x_offset + HIDAMARI_WIDTH_VISIBLE / 2 - 2
+			+ hidamari_orientation[field->next]
 		                              [0]
 		                              [i].x;
-		y = (HIDAMARI_HEIGHT_VISIBLE + 4)
+		y = y_offset + (HIDAMARI_HEIGHT_VISIBLE + 4)
 			- hidamari_orientation[field->next]
 		                              [0]
 		                              [i].y;
@@ -248,31 +249,31 @@ draw_field(HidamariBuffer *buf, HidamariPlayField *field)
 
 	/* Draw the scoreboard */
 	snprintf((char *)score, sizeof(score) + 1, "%010d", field->score);
-	for (x = 1; x < HIDAMARI_WIDTH - 1; ++x) {
+	for (x = 1; x < HIDAMARI_WIDTH_VISIBLE - 1; ++x) {
 		for (y = HIDAMARI_HEIGHT_VISIBLE; y < HIDAMARI_HEIGHT_VISIBLE + 3; ++y) {
 			if (HIDAMARI_HEIGHT_VISIBLE + 1 == y) {
-				buf_set(buf, x, y, score[x - 1] - 48, (u8[]){0, 0 ,0});
+				buf_set(buf, x_offset + x, y_offset + y, score[x - 1] - 48, (u8[]){0, 0 ,0});
 			} else {
-				buf->tile[x][y] = HIDAMARI_TILE_WALL;
+				buf->tile[x_offset + x][y_offset + y] = HIDAMARI_TILE_WALL;
 			}
 		}
 	}
 	/* Draw the playfield */
 	for (x = 1; x < HIDAMARI_WIDTH_VISIBLE - 1; ++x) {
-		for (y = 1; y < HIDAMARI_HEIGHT_VISIBLE; ++y) {
+		for (y = y_offset + 1; y < y_offset + HIDAMARI_HEIGHT_VISIBLE; ++y) {
 			if (field->grid[y] & 1 << x) {
-				buf->tile[x][y] = HIDAMARI_TILE_FALLEN;
+				buf->tile[x_offset + x][y_offset +y] = HIDAMARI_TILE_FALLEN;
 			} else {
-				buf->tile[x][y] = HIDAMARI_TILE_SPACE;
+				buf->tile[x_offset + x][y_offset + y] = HIDAMARI_TILE_SPACE;
 			}
 		}
 	}
 	/* Draw the current piece */
 	for (i = 0; i < 4; ++i) {
-		x = hidamari_orientation[field->current.shape]
+		x = x_offset + hidamari_orientation[field->current.shape]
 		                              [field->current.orientation]
 		                              [i].x + field->current.pos.x;
-		y = field->current.pos.y
+		y = y_offset + field->current.pos.y
 			- hidamari_orientation[field->current.shape]
 		                              [field->current.orientation]
 		                              [i].y;
@@ -299,10 +300,10 @@ draw_main_menu(HidamariBuffer *buf, HidamariGame *game)
 			buf_set(buf, x, y, HIDAMARI_TILE_SPACE, color);
 		}
 	}
-	buf_write_cstr(buf, 2, HIDAMARI_BUFFER_HEIGHT - 3, "HIDAMARI");
-	buf_write_cstr(buf, 4, HIDAMARI_BUFFER_HEIGHT - 7, "PLAY");
-	buf_write_cstr(buf, 3, HIDAMARI_BUFFER_HEIGHT - 9, "OPTION");
-	buf_write_cstr(buf, 4, HIDAMARI_BUFFER_HEIGHT - 11, "QUIT");
+	buf_write_cstr(buf, 8, HIDAMARI_BUFFER_HEIGHT - 3, "HIDAMARI");
+	buf_write_cstr(buf, 10, HIDAMARI_BUFFER_HEIGHT - 7, "PLAY");
+	buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 9, "OPTION");
+	buf_write_cstr(buf, 10, HIDAMARI_BUFFER_HEIGHT - 11, "QUIT");
 }
 
 static void
@@ -731,7 +732,7 @@ hidamari_update(HidamariGame *game, Button act)
 		} else {
 			game->state = field_update(&game->field, act);
 		}
-		draw_field(&game->buf, &game->field);
+		draw_field(&game->buf, 6, 0, &game->field);
 		break;
 	case HIDAMARI_GS_GAME_OVER:
 		game->state = HIDAMARI_GS_MAIN_MENU;
