@@ -323,28 +323,28 @@ draw_option_menu(HidamariBuffer *buf, HidamariGame *game)
 			buf->tile[x][y] = HIDAMARI_TILE_SPACE;
 		}
 	}
-	buf_write_cstr(buf, 3, HIDAMARI_BUFFER_HEIGHT - 3, "OPTION");
-	buf_write_cstr(buf, 3, HIDAMARI_BUFFER_HEIGHT - 7, "AI ");
+	buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 3, "OPTION");
+	buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 7, "AI ");
 	if (game->ai.active) {
-		buf_write_cstr(buf, 6, HIDAMARI_BUFFER_HEIGHT - 7, "ON");
+		buf_write_cstr(buf, 12, HIDAMARI_BUFFER_HEIGHT - 7, "ON");
 	} else {
-		buf_write_cstr(buf, 6, HIDAMARI_BUFFER_HEIGHT - 7, "OFF");
+		buf_write_cstr(buf, 12, HIDAMARI_BUFFER_HEIGHT - 7, "OFF");
 	}
 	switch (game->ai.skill) {
 		case HIDAMARI_AI_POOR:
-			buf_write_cstr(buf, 4, HIDAMARI_BUFFER_HEIGHT - 9, "POOR");
+			buf_write_cstr(buf, 10, HIDAMARI_BUFFER_HEIGHT - 9, "POOR");
 			break;
 		case HIDAMARI_AI_NORMAL:
-			buf_write_cstr(buf, 3, HIDAMARI_BUFFER_HEIGHT - 9, "NORMAL");
+			buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 9, "NORMAL");
 			break;
 		case HIDAMARI_AI_SKILLED:
-			buf_write_cstr(buf, 2, HIDAMARI_BUFFER_HEIGHT - 9, "SKILLED");
+			buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 9, "SKILLED");
 			break;
 		case HIDAMARI_AI_GODLIKE:
-			buf_write_cstr(buf, 2, HIDAMARI_BUFFER_HEIGHT - 9, "GODLIKE");
+			buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 9, "GODLIKE");
 			break;
 	}
-	buf_write_cstr(buf, 4, HIDAMARI_BUFFER_HEIGHT - 11, "BACK");
+	buf_write_cstr(buf, 10, HIDAMARI_BUFFER_HEIGHT - 11, "BACK");
 }
 
 /* Shift all lines above a certain y value down by one */
@@ -678,6 +678,7 @@ option_menu(HidamariGame *game, Button act)
 				game->ai.active = !game->ai.active;
 				return HIDAMARI_GS_OPTION_MENU;
 			case 1:
+				game->ai.skill = (game->ai.skill + 1) % 3;
 				return HIDAMARI_GS_OPTION_MENU;
 			case 2:
 				return HIDAMARI_GS_MAIN_MENU;

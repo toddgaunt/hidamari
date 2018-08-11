@@ -27,7 +27,6 @@ typedef uint8_t Button;
 typedef uint8_t HidamariTile;
 typedef uint8_t HidamariShape;
 typedef uint8_t HidamariGameState;
-typedef uint8_t HidamariAISkill;
 typedef struct Hidamari Hidamari;
 typedef struct HidamariGame HidamariGame;
 typedef struct HidamariPlayField HidamariPlayField;
@@ -174,7 +173,7 @@ struct HidamariAIState {
 	bool active;
 	void *region;
 	Button const *planstr;
-	HidamariAISkill skill;
+	uint8_t skill;
 };
 
 struct HidamariGame {
