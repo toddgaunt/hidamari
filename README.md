@@ -19,6 +19,6 @@ be navigated with the arrow keys and space/return.
 
 #### Articles/Demos
 
-[2018-04-26](http://www.lunargarden.space/article/4.html)
+[2018-04-26](http://www.lunargarden.space/post/b/4.html)
 
 [2018-02-20](http://lunargarden.space/files/2018-02-15/hidamari_demo.webm)
