@@ -181,6 +181,13 @@ static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 	},
 };
 
+#if 0
+	static inline void
+	project_ghost()
+	{
+	}
+#endif
+
 static inline void
 buf_set(HidamariBuffer *buf, size_t x, size_t y, HidamariTile tile, u8 const color[3])
 {
@@ -330,6 +337,7 @@ draw_option_menu(HidamariBuffer *buf, HidamariGame *game)
 	} else {
 		buf_write_cstr(buf, 12, HIDAMARI_BUFFER_HEIGHT - 7, "OFF");
 	}
+#if 0
 	switch (game->ai.skill) {
 		case HIDAMARI_AI_POOR:
 			buf_write_cstr(buf, 10, HIDAMARI_BUFFER_HEIGHT - 9, "POOR");
@@ -344,7 +352,8 @@ draw_option_menu(HidamariBuffer *buf, HidamariGame *game)
 			buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 9, "GODLIKE");
 			break;
 	}
-	buf_write_cstr(buf, 10, HIDAMARI_BUFFER_HEIGHT - 11, "BACK");
+#endif
+	buf_write_cstr(buf, 10, HIDAMARI_BUFFER_HEIGHT - 9, "BACK");
 }
 
 /* Shift all lines above a certain y value down by one */
@@ -664,13 +673,13 @@ option_menu(HidamariGame *game, Button act)
 	switch (act) {
 		case BUTTON_UP:
 			if (0 == *cursor) {
-				*cursor = 2;
+				*cursor = 1;
 			} else {
 				*cursor = *cursor - 1;
 			}
 			break;
 		case BUTTON_DOWN:
-			*cursor = (*cursor + 1) % 3;
+			*cursor = (*cursor + 1) % 2;
 			break;
 		case BUTTON_B:
 			switch (*cursor) {
@@ -678,9 +687,11 @@ option_menu(HidamariGame *game, Button act)
 				game->ai.active = !game->ai.active;
 				return HIDAMARI_GS_OPTION_MENU;
 			case 1:
+#if 0
 				game->ai.skill = (game->ai.skill + 1) % 3;
 				return HIDAMARI_GS_OPTION_MENU;
 			case 2:
+#endif
 				return HIDAMARI_GS_MAIN_MENU;
 			}
 	}
