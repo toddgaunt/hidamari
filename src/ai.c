@@ -97,11 +97,11 @@ h1(struct field *field)
 	int top;
 	size_t i, j;
 	int score = 0;
-	int heights[10];
+	int heights[FIELD_WIDTH];
 
 	for (i = 0; i < HIDAMARI_WIDTH - 1; ++i) {
 		for (j = 0; j < HIDAMARI_HEIGHT; ++j) {
-			if ((field->grid[j] & (2 << i)) == (2 << i)) {
+			if ((field->bitboard[j] & (2 << i)) == (2 << i)) {
 				top = j;
 			}
 		}
@@ -123,7 +123,7 @@ h2(struct field *field)
 
 	for (i = 2; i < (1 << (HIDAMARI_WIDTH - 1)); i <<= 1) {
 		for (j = 0; j < HIDAMARI_HEIGHT; ++j) {
-			if ((field->grid[j] & i) == i) {
+			if ((field->bitboard[j] & i) == i) {
 				top = j;
 			}
 		}
@@ -145,7 +145,7 @@ h3(struct field *field)
 	for (i = 0; i < HIDAMARI_WIDTH - 1; ++i) {
 		cnt = 0;
 		for (j = 0; j < HIDAMARI_HEIGHT; ++j) {
-			if ((field->grid[j] & (2 << i)) == (2 << i)) {
+			if ((field->bitboard[j] & (2 << i)) == (2 << i)) {
 				score += cnt;
 				cnt = 0;
 			} else {

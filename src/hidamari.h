@@ -11,8 +11,8 @@
 #include "vec2.h"
 #include "type.h"
 
-#define FIELD_HEIGHT_VIS 23 - 3
-#define FIELD_WIDTH_VIS 12
+#define FIELD_HEIGHT 23
+#define FIELD_WIDTH 12
 
 #define HIDAMARI_HEIGHT 23
 #define HIDAMARI_WIDTH 12
@@ -27,8 +27,7 @@
 #define HIDAMARI_MAIN_CURSOR 0
 #define HIDAMARI_OPTION_CURSOR 1
 
-typedef uint8_t Button;
-typedef struct HidamariMenu HidamariMenu;
+typedef u8 Button;
 
 enum input {
 	BTN_NONE = 0,
@@ -150,10 +149,10 @@ struct drawbuf  {
 };
 
 struct piece {
-	int x;
-	int y;
+	i8 x;
+	i8 y;
+	i8 dir : 3;
 	enum shape shape : 4;
-	u8 dir : 3;
 };
 
 struct field {
@@ -163,26 +162,25 @@ struct field {
 	u32 lines; 
 	/* Timing */
 	f32 gravity_timer; 
-	u8 slide_timer : 4;
+	u8 slide_timer;
 	/* Randomization */
-	u4 bag_pos : 4; /* Current position in the bag */
+	u8 bag_pos; /* Current position in the bag */
 	enum shape bag[7]; /* Random Bag, used for pseudo-random order */
 	/* Hidamaries */
-	enum shape next : 4; /* Lookahead piece for player */
+	enum shape next; /* Lookahead piece for player */
 	struct piece current;
-	u12 grid[HIDAMARI_HEIGHT]; /* Represents static Hidamaries */
+	u16 bitboard[FIELD_HEIGHT]; /* Represents static Hidamaries */
 };
 
 struct ai_state {
 	bool active;
 	void *region;
 	Button const *planstr;
-	uint8_t skill;
+	u8 skill;
 };
 
 struct hidamari {
 	enum game_state state;
-	uint8_t cursor[2];
 	struct field field;
 	struct ai_state ai;
 };

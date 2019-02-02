@@ -16,6 +16,9 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
+#define BB_GET(bitboard, x, y) ((1 << (x)) & (bitboard)[(y)])
+#define BB_SET(bitboard, x, y) ((bitboard)[(y)] |= 1 << (x))
+
 static f32 const drop_time = 1.0;
 static u8 const slide_time = 15;
 
@@ -248,19 +251,19 @@ draw_field(struct drawbuf *buf, size_t x_offset, size_t y_offset, struct field *
 	size_t x, y;
 
 	/* Draw the borders */
-	for (y = 0; y < FIELD_HEIGHT_VIS; ++y) {
+	for (y = 0; y < FIELD_HEIGHT - 3; ++y) {
 		buf->tile[x_offset][y_offset + y] = TILE_WALL;
-		buf->tile[x_offset + FIELD_WIDTH_VIS - 1][y_offset + y] = TILE_WALL;
+		buf->tile[x_offset + FIELD_WIDTH - 1][y_offset + y] = TILE_WALL;
 	}
 
-	for (x = 1; x < FIELD_WIDTH_VIS - 1; ++x) {
+	for (x = 1; x < FIELD_WIDTH - 1; ++x) {
 		buf->tile[x_offset + x][y_offset] = TILE_WALL;
 	}
 
 	/* Draw the field */
-	for (x = 1; x < FIELD_WIDTH_VIS - 1; ++x) {
-		for (y = 1; y < FIELD_HEIGHT_VIS; ++y) {
-			if (field->grid[y] & 1 << x) {
+	for (x = 1; x < FIELD_WIDTH - 1; ++x) {
+		for (y = 1; y < FIELD_HEIGHT - 3; ++y) {
+			if (field->bitboard[y] & 1 << x) {
 				buf->tile[x_offset + x][y_offset + y] = TILE_FALLEN;
 			} else {
 				buf->tile[x_offset + x][y_offset + y] = TILE_SPACE;
@@ -276,7 +279,7 @@ draw_field(struct drawbuf *buf, size_t x_offset, size_t y_offset, struct field *
 			- shapes[field->current.shape]
 		                              [field->current.dir]
 		                              [i].y;
-		if (y >= FIELD_HEIGHT_VIS)
+		if (y >= FIELD_HEIGHT - 3)
 			continue;
 		buf->tile[x][y] = TILE_SPACE + 1 + field->current.shape;
 	}
@@ -289,7 +292,7 @@ shift_lines(struct field *field, size_t y_start)
 	size_t y;
 
 	for (y = y_start; y < HIDAMARI_HEIGHT - 1; ++y) {
-		field->grid[y] = field->grid[y + 1];
+		field->bitboard[y] = field->bitboard[y + 1];
 	}
 }
 
@@ -301,7 +304,7 @@ clear_lines(struct field *field)
 	size_t score;
 
 	while (y < HIDAMARI_HEIGHT) {
-		if (2046 == (field->grid[y] & 2046)) {
+		if (2046 == (field->bitboard[y] & 2046)) {
 			shift_lines(field, y);
 			combo += 1;
 		} else {
@@ -363,7 +366,7 @@ clear_lines(struct field *field)
 static bool
 is_game_over(struct field *field)
 {
-	if (field->grid[HIDAMARI_HEIGHT - 1] & 0x7FE)
+	if (field->bitboard[HIDAMARI_HEIGHT - 1] & 0x7FE)
 		return true;
 	return false;
 }
@@ -385,9 +388,9 @@ get_next_hidamari(struct field *field)
 	field->bag_pos += 1;
 }
 
-/* Check if the Hidamari would collide in the given grid, at the given x,y coordinates */
+/* Check if the Hidamari would collide in the given bitboard, at the given x,y coordinates */
 static bool
-is_collision(struct piece const *t, u12 const grid[HIDAMARI_HEIGHT])
+is_collision(u12 const bitboard[HIDAMARI_HEIGHT], struct piece const *t)
 {
 	int i;
 	int x, y;
@@ -395,28 +398,30 @@ is_collision(struct piece const *t, u12 const grid[HIDAMARI_HEIGHT])
 	for (i = 0; i < 4; ++i) {
 		x = shapes[t->shape][t->dir][i].x + t->x;
 		y = t->y - shapes[t->shape][t->dir][i].y;
-		if (y < 0 || y > HIDAMARI_HEIGHT - 1
-		|| x < 0 || x > HIDAMARI_WIDTH - 1
-		|| (1 << x) & grid[y])
+
+		/* Edge detection */
+		if (y < 0 || y > FIELD_HEIGHT - 1
+		||  x < 0 || x > FIELD_WIDTH - 1)
+			return true;
+
+		/* Static shape detection */
+		if (BB_GET(bitboard, x, y))
 			return true;
 	}
 	return false;
 }
 
-/* Lock the current piece in place by copying it to the static piece grid */
+/* Lock the current piece in place by copying it to the static piece bitboard */
 static void
-lock_piece(u12 grid[HIDAMARI_HEIGHT], struct piece const *t)
+lock_piece(u16 bitboard[HIDAMARI_HEIGHT], struct piece const *t)
 {
-	int i;
-	u12 x, y;
+	i8 i;
+	u16 x, y;
 
 	for (i = 0; i < 4; ++i) {
-		x = 1 << (shapes[t->shape][t->dir][i].x + t->x);
+		x = t->x + shapes[t->shape][t->dir][i].x;
 		y = t->y - shapes[t->shape][t->dir][i].y;
-
-		printf("%d - %d = %d\n", t->y, shapes[t->shape][t->dir][i].y, y);
-
-		grid[y] |= x;
+		BB_SET(bitboard, x, y);
 	}
 }
 
@@ -428,13 +433,13 @@ move_current(struct field *field, int x, int y)
 
 	tmp.x += x;
 	tmp.y += y;
-	if (is_collision(&tmp, field->grid))
+	if (is_collision(field->bitboard, &tmp))
 		return false;
 	field->current = tmp;
 	return true;
 }
 
-/* Standard Tetris Random Hidamari generator. */
+/* The standard random piece generator. */
 static void
 r7system(enum shape bag[7])
 {
@@ -461,12 +466,12 @@ r7system(enum shape bag[7])
 	
 /* Rotate the current hidamari */
 static void
-rotate_current(struct field *field, int delta)
+rotate_current(struct field *field, i8 delta)
 {
 	struct piece tmp = field->current;
 
 	tmp.dir = MIN((u8)(tmp.dir + delta) % 4, 3);
-	if (!is_collision(&tmp, field->grid))
+	if (!is_collision(field->bitboard, &tmp))
 		field->current = tmp;
 }
 
@@ -476,8 +481,8 @@ field_init(struct field *field)
 	size_t i;
 
 	memset(field, 0, sizeof(*field));
-	/* Initialize the random bag */
 	r7system(field->bag);
+
 	/* First hidamari must not be a S, Z, or O */
 	do {
 		field->next = rand() % 7;
@@ -485,19 +490,20 @@ field_init(struct field *field)
 	      || SHAPE_S == field->next
 	      || SHAPE_Z == field->next);
 	get_next_hidamari(field);
+
 	/* Initialize the borders */
-	field->grid[0] |= 4095;
+	field->bitboard[0] |= 0xFFF;
 	for (i = 1; i < HIDAMARI_HEIGHT; ++i) {
-		field->grid[i] = 2049;
+		field->bitboard[i] = 0x801;
 	}
 }
 
 int
-field_update(struct field *field, Button act)
+field_update(struct field *field, Button in)
 {
 	struct piece tmp;
 
-	switch (act) {
+	switch (in) {
 	case BTN_NONE:
 		break;
 	case BTN_DOWN:
@@ -533,11 +539,11 @@ field_update(struct field *field, Button act)
 	}
 	tmp = field->current;
 	tmp.y -= 1;
-	if (is_collision(&tmp, field->grid)) {
+	if (is_collision(field->bitboard, &tmp)) {
 		if (field->slide_timer < slide_time) {
 			field->slide_timer += 1;
 		} else {
-			lock_piece(field->grid, &field->current);
+			lock_piece(field->bitboard, &field->current);
 			clear_lines(field);
 			get_next_hidamari(field);
 			field->slide_timer = 0;
@@ -581,5 +587,5 @@ void
 hidamari_render(struct drawbuf *buf, struct hidamari *game)
 {
 	draw_field(buf, 0, 0, &game->field);
-	draw_field(buf, FIELD_WIDTH_VIS + 4, 0, &game->field);
+	draw_field(buf, FIELD_WIDTH + 4, 0, &game->field);
 }
