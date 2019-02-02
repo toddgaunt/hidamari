@@ -25,12 +25,6 @@
 #define HIDAMARI_OPTION_CURSOR 1
 
 typedef uint8_t Button;
-typedef uint8_t HidamariTile;
-typedef uint8_t HidamariGameState;
-typedef struct Hidamari Hidamari;
-typedef struct HidamariGame HidamariGame;
-typedef struct HidamariAIState HidamariAIState;
-typedef struct HidamariBuffer HidamariBuffer;
 typedef struct HidamariMenu HidamariMenu;
 
 enum input {
@@ -114,32 +108,30 @@ enum tile {
 };
 
 enum shape {
-	HIDAMARI_I,        
-	HIDAMARI_J,        
-	HIDAMARI_L,        
-	HIDAMARI_O,        
-	HIDAMARI_S,        
-	HIDAMARI_T,        
-	HIDAMARI_Z,        
-	HIDAMARI_LAST, /* Not an actual piece, just used for enum length. Also
+	SHAPE_I,        
+	SHAPE_J,        
+	SHAPE_L,        
+	SHAPE_O,        
+	SHAPE_S,        
+	SHAPE_T,        
+	SHAPE_Z,        
+	SHAPE_LAST, /* Not an actual piece, just used for enum length. Also
 			  can be used as a NULL value for hidamaris */
 };
 
 /* Current state of the game */
 enum game_state {
-	HIDAMARI_GS_INIT = 0,
-	HIDAMARI_GS_MAIN_MENU,
-	HIDAMARI_GS_OPTION_MENU,
-	HIDAMARI_GS_GAME_PLAYING,
-	HIDAMARI_GS_GAME_OVER,
+	GAMESTATE_INIT = 0,
+	GAMESTATE_PLAYING,
+	GAMESTATE_OVER,
 };
 
-struct HidamariBuffer {
-	HidamariTile tile[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
+struct drawbuf  {
+	enum tile tile[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
 	u8 color[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT][3];
 };
 
-struct Hidamari {
+struct piece {
 	int x;
 	int y;
 	enum shape shape : 4;
@@ -159,23 +151,22 @@ struct playfield {
 	enum shape bag[7]; /* Random Bag, used for pseudo-random order */
 	/* Hidamaries */
 	enum shape next : 4; /* Lookahead piece for player */
-	Hidamari current;
+	struct piece current;
 	u12 grid[HIDAMARI_HEIGHT]; /* Represents static Hidamaries */
 };
 
-struct HidamariAIState {
+struct ai_state {
 	bool active;
 	void *region;
 	Button const *planstr;
 	uint8_t skill;
 };
 
-struct HidamariGame {
-	HidamariGameState state;
-	HidamariBuffer buf;
+struct hidamari {
+	enum game_state state;
 	uint8_t cursor[2];
 	struct playfield field;
-	HidamariAIState ai;
+	struct ai_state ai;
 };
 
 /* Update the playfield by one timestep:
@@ -187,15 +178,9 @@ struct HidamariGame {
  * This is the only function needed to run the game after initialization.
  */
 void
-hidamari_update(HidamariGame *game, Button act);
+hidamari_update(struct hidamari *game, Button act);
 
 void
-hidamari_render(HidamariGame *game);
-
-/* An alternative update function with no visuals for particle-swarm
- * optimization, or simulation without the overhead of visualization.
- * The weights of the AI heuristics can be provided. */
-void
-hidamari_pso_update(HidamariGame *game, double weight[3]);
+hidamari_render(struct drawbuf *buf, struct hidamari *game);
 
 #endif

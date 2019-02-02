@@ -17,7 +17,7 @@
 #define TILE_S 16
 
 void
-render(SDL_Renderer *renderer, SDL_Texture *texture, HidamariBuffer *buf)
+render(SDL_Renderer *renderer, SDL_Texture *texture, struct drawbuf *buf)
 {
 	int i, j;
 	SDL_Rect src_r = {.h = TILE_S, .w = TILE_S, .x = 0, .y = 0};
@@ -65,7 +65,8 @@ main()
 	dt = 1000 / 60; /* miliseconds / frames */
 	acc = 0.0;
 	Button button = BTN_NONE;
-	HidamariGame game = {0};
+	struct hidamari game = {0};
+	struct drawbuf buf = {0};
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		return EXIT_FAILURE;
@@ -160,10 +161,10 @@ main()
 			button = BTN_NONE;
 		}
 		//usleep((dt - acc) * 1000);
-		hidamari_render(&game);
 		//SDL_UpdateTexture(texture, NULL, game.vga.buf, game.vga.w * sizeof(*game.vga.buf));
 		//draw(renderer, texture);
-		render(renderer, tileset_hw, &game.buf);
+		hidamari_render(&buf, &game);
+		render(renderer, tileset_hw, &buf);
 	}
 endgame:
 	SDL_DestroyWindow(screen);
