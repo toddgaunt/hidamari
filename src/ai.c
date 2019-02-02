@@ -11,14 +11,14 @@
 #define DEPTH 2
 
 void
-field_init(HidamariPlayField *field);
+field_init(struct playfield *field);
 
 int
-field_update(HidamariPlayField *field, Button act);
+field_update(struct playfield *field, Button act);
 
 /* Allocate a new node with a copy of _init_ as its state */
 FieldNode *
-create_node(void *region, HidamariPlayField const *init)
+create_node(void *region, struct playfield const *init)
 {
 	FieldNode *ret;
 
@@ -26,7 +26,7 @@ create_node(void *region, HidamariPlayField const *init)
 	if (!ret)
 		return NULL;
 	memset(ret, 0, sizeof(*ret));
-	memcpy(&ret->field, init, sizeof(HidamariPlayField));
+	memcpy(&ret->field, init, sizeof(struct playfield));
 	return ret;
 }
 
@@ -68,15 +68,15 @@ expand(void *region, FieldNode **stackp, FieldNode *parent)
 	for (i = 0; i < 3; ++i) {
 		for (j = 0; j < 6; ++j) {
 			tmp = region_alloc(region, i + j + 1);
-			memset(tmp, BUTTON_R, i);
-			memset(tmp + i, BUTTON_RIGHT, j);
-			tmp[i + j] = BUTTON_B;
+			memset(tmp, BTN_R, i);
+			memset(tmp + i, BTN_RIGHT, j);
+			tmp[i + j] = BTN_B;
 			if (0 > derive(region, stackp, parent, i + j + 1, tmp))
 				return -1;
 			tmp = region_alloc(region, i + j + 1);
-			memset(tmp, BUTTON_R, i);
-			memset(tmp + i, BUTTON_LEFT, j);
-			tmp[i + j] = BUTTON_B;
+			memset(tmp, BTN_R, i);
+			memset(tmp + i, BTN_LEFT, j);
+			tmp[i + j] = BTN_B;
 			if (0 > derive(region, stackp, parent, i + j + 1, tmp))
 				return -1;
 		}
@@ -92,7 +92,7 @@ expand(void *region, FieldNode **stackp, FieldNode *parent)
  * columns.
  */
 static int
-h1(HidamariPlayField *field)
+h1(struct playfield *field)
 {
 	int top;
 	size_t i, j;
@@ -115,7 +115,7 @@ h1(HidamariPlayField *field)
 
 /* Heuristic 2: Calculate the aggregate height of all columns. */
 static int
-h2(HidamariPlayField *field)
+h2(struct playfield *field)
 {
 	int top;
 	size_t i, j;
@@ -136,7 +136,7 @@ h2(HidamariPlayField *field)
  * as any open space with a filled space above it in the same column.
  */
 static int
-h3(HidamariPlayField *field)
+h3(struct playfield *field)
 {
 	int cnt;
 	size_t i, j;
@@ -160,7 +160,7 @@ h3(HidamariPlayField *field)
  * is multiplied by a certain weight depending on how valuable it is deemed.
  */
 static int
-evaluate(HidamariPlayField *field, double weight[3])
+evaluate(struct playfield *field, double weight[3])
 {
 	int score = 0;
 
@@ -196,7 +196,7 @@ mkplan(void *region, FieldNode *goal)
 		n_move += fp->n_action;
 	}
 	planstr = region_alloc(region, n_move + 1);
-	planstr[n_move--] = BUTTON_NONE;
+	planstr[n_move--] = BTN_NONE;
 	for (fp = goal; fp; fp = fp->parent) {
 		for (i = 0; i < fp->n_action; ++i) {
 			planstr[n_move - i] = fp->action[fp->n_action - i - 1];
@@ -213,7 +213,7 @@ ai_size_requirement()
 }
 
 Button const *
-ai_plan(void *region, double weight[3], HidamariPlayField const *init) {
+ai_plan(void *region, double weight[3], struct playfield const *init) {
 	FieldNode *stack;
 	FieldNode *goal;
 	FieldNode *fp;

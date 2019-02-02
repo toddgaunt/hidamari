@@ -15,7 +15,7 @@ struct FieldNode {
 	size_t g;
 	size_t n_action;
 	Button *action;
-	HidamariPlayField field;
+	struct playfield field;
 	FieldNode *parent;
 	FieldNode *next;
 };
@@ -38,6 +38,6 @@ ai_size_requirement();
  *	at a desirable state.
  */
 Button const *
-ai_plan(void *region, double weight[3], HidamariPlayField const *init);
+ai_plan(void *region, double weight[3], struct playfield const *init);
 
 #endif

@@ -7,9 +7,10 @@ MODULES :=
 SRC := sdl2_main.c hidamari.c region.c ai.c
 
 # Project modules
-include $(patsubst %, %/module.mk, $(MODULES))
+include $(patsubst %, src/%/module.mk, $(MODULES))
 
-OBJ := $(patsubst %.c, %.o, $(filter %.c, $(SRC)))
+OBJ := $(patsubst %.c, src/%.o, $(filter %.c, $(SRC)))
+OBJ_D := $(patsubst %.c, src/%.o_d, $(filter %.c, $(SRC)))
 
 # Standard targets
 all: hidamari

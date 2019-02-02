@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "vec2.h"
 #include "type.h"
 
 #define HIDAMARI_HEIGHT 23
@@ -25,96 +26,94 @@
 
 typedef uint8_t Button;
 typedef uint8_t HidamariTile;
-typedef uint8_t HidamariShape;
 typedef uint8_t HidamariGameState;
 typedef struct Hidamari Hidamari;
 typedef struct HidamariGame HidamariGame;
-typedef struct HidamariPlayField HidamariPlayField;
 typedef struct HidamariAIState HidamariAIState;
 typedef struct HidamariBuffer HidamariBuffer;
 typedef struct HidamariMenu HidamariMenu;
 
-enum {
-	BUTTON_NONE = 0,
+enum input {
+	BTN_NONE = 0,
 	/* D-pad */
-	BUTTON_UP,
-	BUTTON_DOWN,
-	BUTTON_RIGHT,
-	BUTTON_LEFT,
+	BTN_UP,
+	BTN_DOWN,
+	BTN_RIGHT,
+	BTN_LEFT,
 	/* Shoulder buttons */
-	BUTTON_R,
-	BUTTON_L,
+	BTN_R,
+	BTN_L,
 	/* Face buttons */
-	BUTTON_B,
-	BUTTON_A,
-	BUTTON_Y,
-	BUTTON_X,
-	BUTTON_LAST, /* Not an actual action, just used for enum length */
+	BTN_B,
+	BTN_A,
+	BTN_Y,
+	BTN_X,
+	BTN_LAST, /* Not an actual action, just used for enum length */
 };
 
-enum {
-	HIDAMARI_TILE_0,
-	HIDAMARI_TILE_1,
-	HIDAMARI_TILE_2,
-	HIDAMARI_TILE_3,
-	HIDAMARI_TILE_4,
-	HIDAMARI_TILE_5,
-	HIDAMARI_TILE_6,
-	HIDAMARI_TILE_7,
-	HIDAMARI_TILE_8,
-	HIDAMARI_TILE_9,
-	HIDAMARI_TILE_PLACEHOLDER1,
-	HIDAMARI_TILE_PLACEHOLDER2,
-	HIDAMARI_TILE_PLACEHOLDER3,
-	HIDAMARI_TILE_PLACEHOLDER4,
-	HIDAMARI_TILE_PLACEHOLDER5,
-	HIDAMARI_TILE_PLACEHOLDER6,
-	HIDAMARI_TILE_SPACE,
-	HIDAMARI_TILE_I,
-	HIDAMARI_TILE_J,
-	HIDAMARI_TILE_L,
-	HIDAMARI_TILE_O,
-	HIDAMARI_TILE_S,
-	HIDAMARI_TILE_T,
-	HIDAMARI_TILE_Z,
-	HIDAMARI_TILE_FALLEN,
-	HIDAMARI_TILE_WALL,
-	HIDAMARI_TILE_PLAIN,
-	HIDAMARI_TILE_PLACEHOLDER7,
-	HIDAMARI_TILE_PLACEHOLDER8,
-	HIDAMARI_TILE_PLACEHOLDER9,
-	HIDAMARI_TILE_PLACEHOLDER10,
-	HIDAMARI_TILE_PLACEHOLDER11,
-	HIDAMARI_TILE_CHAR_A,
-	HIDAMARI_TILE_CHAR_B,
-	HIDAMARI_TILE_CHAR_C,
-	HIDAMARI_TILE_CHAR_D,
-	HIDAMARI_TILE_CHAR_E,
-	HIDAMARI_TILE_CHAR_F,
-	HIDAMARI_TILE_CHAR_G,
-	HIDAMARI_TILE_CHAR_H,
-	HIDAMARI_TILE_CHAR_I,
-	HIDAMARI_TILE_CHAR_J,
-	HIDAMARI_TILE_CHAR_K,
-	HIDAMARI_TILE_CHAR_L,
-	HIDAMARI_TILE_CHAR_M,
-	HIDAMARI_TILE_CHAR_N,
-	HIDAMARI_TILE_CHAR_O,
-	HIDAMARI_TILE_CHAR_P,
-	HIDAMARI_TILE_CHAR_Q,
-	HIDAMARI_TILE_CHAR_R,
-	HIDAMARI_TILE_CHAR_S,
-	HIDAMARI_TILE_CHAR_T,
-	HIDAMARI_TILE_CHAR_U,
-	HIDAMARI_TILE_CHAR_V,
-	HIDAMARI_TILE_CHAR_W,
-	HIDAMARI_TILE_CHAR_X,
-	HIDAMARI_TILE_CHAR_Y,
-	HIDAMARI_TILE_CHAR_Z,
-	HIDAMARI_TILE_LAST, /* Not an actual tile, just used for enum length */
+enum tile {
+	TILE_0,
+	TILE_1,
+	TILE_2,
+	TILE_3,
+	TILE_4,
+	TILE_5,
+	TILE_6,
+	TILE_7,
+	TILE_8,
+	TILE_9,
+	TILE_PLACEHOLDER1,
+	TILE_PLACEHOLDER2,
+	TILE_PLACEHOLDER3,
+	TILE_PLACEHOLDER4,
+	TILE_PLACEHOLDER5,
+	TILE_PLACEHOLDER6,
+	TILE_SPACE,
+	TILE_I,
+	TILE_J,
+	TILE_L,
+	TILE_O,
+	TILE_S,
+	TILE_T,
+	TILE_Z,
+	TILE_FALLEN,
+	TILE_WALL,
+	TILE_PLAIN,
+	TILE_PLACEHOLDER7,
+	TILE_PLACEHOLDER8,
+	TILE_PLACEHOLDER9,
+	TILE_PLACEHOLDER10,
+	TILE_PLACEHOLDER11,
+	TILE_CHAR_A,
+	TILE_CHAR_B,
+	TILE_CHAR_C,
+	TILE_CHAR_D,
+	TILE_CHAR_E,
+	TILE_CHAR_F,
+	TILE_CHAR_G,
+	TILE_CHAR_H,
+	TILE_CHAR_I,
+	TILE_CHAR_J,
+	TILE_CHAR_K,
+	TILE_CHAR_L,
+	TILE_CHAR_M,
+	TILE_CHAR_N,
+	TILE_CHAR_O,
+	TILE_CHAR_P,
+	TILE_CHAR_Q,
+	TILE_CHAR_R,
+	TILE_CHAR_S,
+	TILE_CHAR_T,
+	TILE_CHAR_U,
+	TILE_CHAR_V,
+	TILE_CHAR_W,
+	TILE_CHAR_X,
+	TILE_CHAR_Y,
+	TILE_CHAR_Z,
+	TILE_LAST, /* Not an actual tile, just used for enum length */
 };
 
-enum {
+enum shape {
 	HIDAMARI_I,        
 	HIDAMARI_J,        
 	HIDAMARI_L,        
@@ -127,18 +126,12 @@ enum {
 };
 
 /* Current state of the game */
-enum {
+enum game_state {
+	HIDAMARI_GS_INIT = 0,
 	HIDAMARI_GS_MAIN_MENU,
 	HIDAMARI_GS_OPTION_MENU,
 	HIDAMARI_GS_GAME_PLAYING,
 	HIDAMARI_GS_GAME_OVER,
-};
-
-enum {
-	HIDAMARI_AI_POOR,
-	HIDAMARI_AI_NORMAL,
-	HIDAMARI_AI_SKILLED,
-	HIDAMARI_AI_GODLIKE,
 };
 
 struct HidamariBuffer {
@@ -147,12 +140,13 @@ struct HidamariBuffer {
 };
 
 struct Hidamari {
-	Vec2 pos; /* Top-left position */
-	HidamariShape shape : 4;
+	int x;
+	int y;
+	enum shape shape : 4;
 	u8 orientation : 3;
 };
 
-struct HidamariPlayField {
+struct playfield {
 	/* Scoring */
 	u8 level;
 	u32 score; 
@@ -162,9 +156,9 @@ struct HidamariPlayField {
 	u8 slide_timer : 4;
 	/* Randomization */
 	u4 bag_pos : 4; /* Current position in the bag */
-	HidamariShape bag[7]; /* Random Bag, used for pseudo-random order */
+	enum shape bag[7]; /* Random Bag, used for pseudo-random order */
 	/* Hidamaries */
-	HidamariShape next : 4; /* Lookahead piece for player */
+	enum shape next : 4; /* Lookahead piece for player */
 	Hidamari current;
 	u12 grid[HIDAMARI_HEIGHT]; /* Represents static Hidamaries */
 };
@@ -180,14 +174,9 @@ struct HidamariGame {
 	HidamariGameState state;
 	HidamariBuffer buf;
 	uint8_t cursor[2];
-	HidamariPlayField field;
+	struct playfield field;
 	HidamariAIState ai;
 };
-
-/* Initialize the playfield, and allocate the global region used by all
- * games. Also start the AI-thread. */
-void
-hidamari_init(HidamariGame *game);
 
 /* Update the playfield by one timestep:
  *	Perform the player action;
@@ -199,6 +188,9 @@ hidamari_init(HidamariGame *game);
  */
 void
 hidamari_update(HidamariGame *game, Button act);
+
+void
+hidamari_render(HidamariGame *game);
 
 /* An alternative update function with no visuals for particle-swarm
  * optimization, or simulation without the overhead of visualization.

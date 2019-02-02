@@ -20,7 +20,7 @@ static f32 const drop_time = 1.0;
 static u8 const slide_time = 15;
 
 static void
-r7system(HidamariShape bag[7]);
+r7system(enum shape bag[7]);
 
 /* Gravity of the falling piece at certain levels */
 static f32 gravity_level[15] = {
@@ -56,7 +56,7 @@ static char const hidamari_shape_char[HIDAMARI_LAST] =
 /* The different orientations of each hidamari. Note that for these
  * coordinates, y starts at the top of the matrix, not bottom. The vectors are
  * organized as (x, y) pairs */
-static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
+static struct vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 	{ /* 'I' */
 		/* - - - -
 		   I I I I 
@@ -208,7 +208,7 @@ buf_write_cstr(HidamariBuffer *buf, size_t x, size_t y, char const *str)
 }
 
 static void
-draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, HidamariPlayField *field)
+draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, struct playfield *field)
 {
 	size_t i;
 	size_t x, y;
@@ -216,12 +216,12 @@ draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, HidamariPlayFi
 
 	/* Draw the borders */
 	for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
-		buf->tile[x_offset][y_offset + y] = HIDAMARI_TILE_WALL;
-		buf->tile[x_offset + HIDAMARI_WIDTH - 1][y_offset + y] = HIDAMARI_TILE_WALL;
+		buf->tile[x_offset][y_offset + y] = TILE_WALL;
+		buf->tile[x_offset + HIDAMARI_WIDTH - 1][y_offset + y] = TILE_WALL;
 	}
 
 	for (x = 1; x < HIDAMARI_BUFFER_WIDTH - 1; ++x) {
-		buf->tile[x_offset + x][y_offset] = HIDAMARI_TILE_WALL;
+		buf->tile[x_offset + x][y_offset] = TILE_WALL;
 	}
 
 	/* Draw the next piece prievew area */
@@ -229,9 +229,9 @@ draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, HidamariPlayFi
 		for (y = HIDAMARI_HEIGHT_VISIBLE + 3; y < HIDAMARI_HEIGHT_VISIBLE + 6; ++y) {
 			if (HIDAMARI_HEIGHT_VISIBLE + 4 == y
 			|| HIDAMARI_HEIGHT_VISIBLE + 3 == y) {
-				buf->tile[x_offset + x][y_offset + y] = HIDAMARI_TILE_SPACE;
+				buf->tile[x_offset + x][y_offset + y] = TILE_SPACE;
 			} else {
-				buf->tile[x_offset + x][y_offset + y] = HIDAMARI_TILE_WALL;
+				buf->tile[x_offset + x][y_offset + y] = TILE_WALL;
 			}
 		}
 	}
@@ -251,7 +251,7 @@ draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, HidamariPlayFi
 			++y;
 		/* if (y >= HIDAMARI_HEIGHT_VISIBLE + 4) */
 		/* 	continue; */
-		buf->tile[x][y] = HIDAMARI_TILE_SPACE + 1 + field->next;
+		buf->tile[x][y] = TILE_SPACE + 1 + field->next;
 	}
 
 	/* Draw the scoreboard */
@@ -261,7 +261,7 @@ draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, HidamariPlayFi
 			if (HIDAMARI_HEIGHT_VISIBLE + 1 == y) {
 				buf_set(buf, x_offset + x, y_offset + y, score[x - 1] - 48, (u8[]){0, 0 ,0});
 			} else {
-				buf->tile[x_offset + x][y_offset + y] = HIDAMARI_TILE_WALL;
+				buf->tile[x_offset + x][y_offset + y] = TILE_WALL;
 			}
 		}
 	}
@@ -269,9 +269,9 @@ draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, HidamariPlayFi
 	for (x = 1; x < HIDAMARI_WIDTH_VISIBLE - 1; ++x) {
 		for (y = y_offset + 1; y < y_offset + HIDAMARI_HEIGHT_VISIBLE; ++y) {
 			if (field->grid[y] & 1 << x) {
-				buf->tile[x_offset + x][y_offset +y] = HIDAMARI_TILE_FALLEN;
+				buf->tile[x_offset + x][y_offset +y] = TILE_FALLEN;
 			} else {
-				buf->tile[x_offset + x][y_offset + y] = HIDAMARI_TILE_SPACE;
+				buf->tile[x_offset + x][y_offset + y] = TILE_SPACE;
 			}
 		}
 	}
@@ -279,19 +279,19 @@ draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, HidamariPlayFi
 	for (i = 0; i < 4; ++i) {
 		x = x_offset + hidamari_orientation[field->current.shape]
 		                              [field->current.orientation]
-		                              [i].x + field->current.pos.x;
-		y = y_offset + field->current.pos.y
+		                              [i].x + field->current.x;
+		y = y_offset + field->current.y
 			- hidamari_orientation[field->current.shape]
 		                              [field->current.orientation]
 		                              [i].y;
 		if (y >= HIDAMARI_HEIGHT_VISIBLE)
 			continue;
-		buf->tile[x][y] = HIDAMARI_TILE_SPACE + 1 + field->current.shape;
+		buf->tile[x][y] = TILE_SPACE + 1 + field->current.shape;
 	}
 }
 
 static void
-draw_main_menu(HidamariBuffer *buf, HidamariGame *game)
+draw_main_menu(HidamariBuffer *buf, HidamariGame *mm)
 {
 	static u8 const color[] = {130, 130, 130};
 	size_t x, y;
@@ -299,12 +299,12 @@ draw_main_menu(HidamariBuffer *buf, HidamariGame *game)
 	/* Draw the backdrop */
 	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
 		for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
-			buf->tile[x][y] = HIDAMARI_TILE_WALL;
+			buf->tile[x][y] = TILE_WALL;
 		}
 	}
 	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
 		for (y = HIDAMARI_BUFFER_HEIGHT - 4; y < HIDAMARI_BUFFER_HEIGHT - 1; ++y) {
-			buf_set(buf, x, y, HIDAMARI_TILE_SPACE, color);
+			buf_set(buf, x, y, TILE_SPACE, color);
 		}
 	}
 	buf_write_cstr(buf, 8, HIDAMARI_BUFFER_HEIGHT - 3, "HIDAMARI");
@@ -322,12 +322,12 @@ draw_option_menu(HidamariBuffer *buf, HidamariGame *game)
 	/* Draw the backdrop */
 	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
 		for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
-			buf->tile[x][y] = HIDAMARI_TILE_WALL;
+			buf->tile[x][y] = TILE_WALL;
 		}
 	}
 	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
 		for (y = HIDAMARI_BUFFER_HEIGHT - 4; y < HIDAMARI_BUFFER_HEIGHT - 1; ++y) {
-			buf->tile[x][y] = HIDAMARI_TILE_SPACE;
+			buf->tile[x][y] = TILE_SPACE;
 		}
 	}
 	buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 3, "OPTION");
@@ -358,7 +358,7 @@ draw_option_menu(HidamariBuffer *buf, HidamariGame *game)
 
 /* Shift all lines above a certain y value down by one */
 static void
-shift_lines(HidamariPlayField *field, size_t y_start)
+shift_lines(struct playfield *field, size_t y_start)
 {
 	size_t y;
 
@@ -368,7 +368,7 @@ shift_lines(HidamariPlayField *field, size_t y_start)
 }
 
 static void
-clear_lines(HidamariPlayField *field)
+clear_lines(struct playfield *field)
 {
 	size_t y = 1;
 	size_t combo = 0;
@@ -435,7 +435,7 @@ clear_lines(HidamariPlayField *field)
 }
 
 static bool
-is_game_over(HidamariPlayField *field)
+is_game_over(struct playfield *field)
 {
 	if (field->grid[HIDAMARI_HEIGHT - 1] & 2046)
 		return true;
@@ -444,12 +444,12 @@ is_game_over(HidamariPlayField *field)
 
 /* Get a new hidamari into play, and update the next hidamari */
 static void
-get_next_hidamari(HidamariPlayField *field)
+get_next_hidamari(struct playfield *field)
 {
 	field->current.shape = field->next;
 	field->current.orientation = 0;
-	field->current.pos.x = 10 / 2 - 1;
-	field->current.pos.y = HIDAMARI_HEIGHT - 1;
+	field->current.x = 10 / 2 - 1;
+	field->current.y = HIDAMARI_HEIGHT - 1;
 
 	if (field->bag_pos >= 7) {
 		r7system(field->bag);
@@ -468,8 +468,8 @@ is_collision(Hidamari const *t, u12 const grid[HIDAMARI_HEIGHT])
 
 	for (i = 0; i < 4; ++i) {
 		x = hidamari_orientation[t->shape]
-				[t->orientation][i].x + t->pos.x;
-		y = t->pos.y - hidamari_orientation[t->shape]
+				[t->orientation][i].x + t->x;
+		y = t->y - hidamari_orientation[t->shape]
 		                                   [t->orientation]
 		                                   [i].y;
 		if (y < 0 || y > HIDAMARI_HEIGHT - 1
@@ -490,29 +490,32 @@ lock_hidamari(u12 recv[HIDAMARI_HEIGHT], Hidamari const *hidamari)
 	for (i = 0; i < 4; ++i) {
 		x = 1 << (hidamari_orientation[hidamari->shape]
 		                              [hidamari->orientation]
-		                              [i].x + hidamari->pos.x);
-		y = hidamari->pos.y
+		                              [i].x + hidamari->x);
+		y = hidamari->y
 			- hidamari_orientation[hidamari->shape]
 		                              [hidamari->orientation]
 		                              [i].y;
+		printf("%d - %d = %d\n", hidamari->y, hidamari_orientation[hidamari->shape]
+		                              [hidamari->orientation]
+		                              [i].y, y);
 		recv[y] |= x;
 	}
 }
 
 /* Move the current piece in the given direction */
 static bool
-move_current(HidamariPlayField *field, Button dir)
+move_current(struct playfield *field, Button dir)
 {
-	assert(BUTTON_DOWN == dir
-	    || BUTTON_RIGHT == dir
-	    || BUTTON_LEFT == dir);
+	assert(BTN_DOWN == dir
+	    || BTN_RIGHT == dir
+	    || BTN_LEFT == dir);
 
 	Hidamari tmp = field->current;
 
 	switch (dir) {
-	case BUTTON_DOWN: tmp.pos.y -= 1; break;
-	case BUTTON_RIGHT: tmp.pos.x += 1; break;
-	case BUTTON_LEFT: tmp.pos.x -= 1; break;
+	case BTN_DOWN: tmp.y -= 1; break;
+	case BTN_RIGHT: tmp.x += 1; break;
+	case BTN_LEFT: tmp.x -= 1; break;
 	default: break;
 	}
 	if (is_collision(&tmp, field->grid))
@@ -523,12 +526,12 @@ move_current(HidamariPlayField *field, Button dir)
 
 /* Standard Tetris Random Hidamari generator. */
 static void
-r7system(HidamariShape bag[7])
+r7system(enum shape bag[7])
 {
 	int i;
 	int r1;
 	int r2;
-	HidamariShape tmp;
+	enum shape tmp;
 
 	bag[0] = HIDAMARI_I;
 	bag[1] = HIDAMARI_J;
@@ -548,13 +551,13 @@ r7system(HidamariShape bag[7])
 	
 /* Rotate the current hidamari, and perform a wall kick if able */
 static void
-rotate_current(HidamariPlayField *field, Button dir)
+rotate_current(struct playfield *field, Button dir)
 {
-	assert(BUTTON_R == dir || BUTTON_L == dir);
+	assert(BTN_R == dir || BTN_L == dir);
 
 	Hidamari tmp = field->current;
 
-	if (BUTTON_R == dir) {
+	if (BTN_R == dir) {
 		tmp.orientation = (tmp.orientation + 1) % 4;
 	} else {
 		tmp.orientation = MIN((u8)(tmp.orientation - 1), 3);
@@ -564,7 +567,7 @@ rotate_current(HidamariPlayField *field, Button dir)
 }
 
 void
-field_init(HidamariPlayField *field)
+field_init(struct playfield *field)
 {
 	size_t i;
 
@@ -586,24 +589,24 @@ field_init(HidamariPlayField *field)
 }
 
 int
-field_update(HidamariPlayField *field, Button act)
+field_update(struct playfield *field, Button act)
 {
 	Hidamari tmp;
 
 	switch (act) {
-	case BUTTON_NONE:
+	case BTN_NONE:
 		break;
-	case BUTTON_DOWN:
-	case BUTTON_RIGHT:
-	case BUTTON_LEFT:
+	case BTN_DOWN:
+	case BTN_RIGHT:
+	case BTN_LEFT:
 		move_current(field, act);
 		break;
-	case BUTTON_R:
-	case BUTTON_L:
+	case BTN_R:
+	case BTN_L:
 		rotate_current(field, act);
 		break;
-	case BUTTON_B:
-		while (move_current(field, BUTTON_DOWN))
+	case BTN_B:
+		while (move_current(field, BTN_DOWN))
 			;
 		field->slide_timer = slide_time;
 		break;
@@ -615,11 +618,11 @@ field_update(HidamariPlayField *field, Button act)
 	field->gravity_timer += gravity_level[field->level];
 	
 	if (field->gravity_timer >= drop_time) {
-		move_current(field, BUTTON_DOWN);
+		move_current(field, BTN_DOWN);
 		field->gravity_timer = 0.0;
 	}
 	tmp = field->current;
-	tmp.pos.y -= 1;
+	tmp.y -= 1;
 	if (is_collision(&tmp, field->grid)) {
 		if (field->slide_timer < slide_time) {
 			field->slide_timer += 1;
@@ -641,17 +644,17 @@ main_menu(HidamariGame *game, Button act)
 	uint8_t *cursor = &game->cursor[HIDAMARI_MAIN_CURSOR];
 
 	switch (act) {
-		case BUTTON_UP:
+		case BTN_UP:
 			if (0 == *cursor) {
 				*cursor = 2;
 			} else {
 				*cursor = *cursor - 1;
 			}
 			break;
-		case BUTTON_DOWN:
+		case BTN_DOWN:
 			*cursor = (*cursor + 1) % 3;
 			break;
-		case BUTTON_B:
+		case BTN_B:
 			switch (*cursor) {
 			case 0:
 				field_init(&game->field);
@@ -671,17 +674,17 @@ option_menu(HidamariGame *game, Button act)
 	uint8_t *cursor = &game->cursor[HIDAMARI_OPTION_CURSOR];
 
 	switch (act) {
-		case BUTTON_UP:
+		case BTN_UP:
 			if (0 == *cursor) {
 				*cursor = 1;
 			} else {
 				*cursor = *cursor - 1;
 			}
 			break;
-		case BUTTON_DOWN:
+		case BTN_DOWN:
 			*cursor = (*cursor + 1) % 2;
 			break;
-		case BUTTON_B:
+		case BTN_B:
 			switch (*cursor) {
 			case 0:
 				game->ai.active = !game->ai.active;
@@ -703,47 +706,29 @@ option_menu(HidamariGame *game, Button act)
  */
 
 void
-hidamari_init(HidamariGame *game)
+hidamari_update(HidamariGame *game, Button in)
 {
-	static Button const dbv = BUTTON_NONE;
-
-	memset(game, 0, sizeof(*game));
-	game->state = HIDAMARI_GS_MAIN_MENU;
-	game->ai.region = region_create(ai_size_requirement());
-	game->ai.planstr = &dbv;
-	game->ai.active = false;
-}
-
-void
-hidamari_update(HidamariGame *game, Button act)
-{
-	//double weight[3] = {28.586806, 77.649833, 61.638933};
-	//double weight[3] = {1.487517, 4.727170, 3.072305};
-	//double weight[3] = {0.3146738, 1, 0.649924};
+	static Button const dbv = BTN_NONE;
 	double weight[3] = {0.848058, 2.304684, 1.405450};
 
 	switch(game->state) {
+	case HIDAMARI_GS_INIT:
+		memset(game, 0, sizeof(*game));
+		game->state = HIDAMARI_GS_MAIN_MENU;
+		game->ai.region = region_create(ai_size_requirement());
+		game->ai.planstr = &dbv;
+		game->ai.active = false;
+		break;
 	case HIDAMARI_GS_MAIN_MENU:
-		game->state = main_menu(game, act);
+		game->state = main_menu(game, in);
 		draw_main_menu(&game->buf, game);
 		break;
 	case HIDAMARI_GS_OPTION_MENU:
-		game->state = option_menu(game, act);
+		game->state = option_menu(game, in);
 		draw_option_menu(&game->buf, game);
 		break;
 	case HIDAMARI_GS_GAME_PLAYING:
-		if (game->ai.active) {
-			if (game->ai.planstr[0] == BUTTON_NONE) {
-				region_clear(game->ai.region);
-				game->ai.planstr = ai_plan(game->ai.region, weight, &game->field);
-			}
-			game->state = field_update(&game->field, game->ai.planstr[0]);
-			if (HIDAMARI_GS_GAME_OVER == game->state)
-				region_destroy(game->ai.region);
-			++game->ai.planstr;
-		} else {
-			game->state = field_update(&game->field, act);
-		}
+		game->state = field_update(&game->field, in);
 		draw_field(&game->buf, 6, 0, &game->field);
 		break;
 	case HIDAMARI_GS_GAME_OVER:
@@ -753,15 +738,13 @@ hidamari_update(HidamariGame *game, Button act)
 }
 
 void
-hidamari_pso_update(HidamariGame *game, double weight[3])
+hidamari_render(HidamariGame *game)
 {
-	if (game->ai.planstr[0] == BUTTON_NONE) {
-		region_clear(game->ai.region);
-		game->ai.planstr = ai_plan(game->ai.region, weight, &game->field);
-	}
-	if (0 != field_update(&game->field, game->ai.planstr[0])) {
-		game->state = HIDAMARI_GS_GAME_OVER;
-		region_destroy(game->ai.region);
-	}
-	++game->ai.planstr;
+	(void)game;
+}
+
+void
+hidamari_ascii(HidamariGame *game)
+{
+	(void)game;
 }

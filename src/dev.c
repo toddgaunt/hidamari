@@ -31,10 +31,11 @@ dump_field(HidamariBuffer const *buf)
 int
 main()
 {
-	HidamariGame game;
+	HidamariGame game = {0};
 
 	srand(time(NULL));
-	hidamari_init(&game);
+	game.ai.active = false;
+	game.state = HIDAMARI_GS_GAME_PLAYING;
 	for (;;) {
 		printf("top-right: %d, %d\n",
 				game.field.current.pos.x,
