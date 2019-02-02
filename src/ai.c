@@ -11,14 +11,14 @@
 #define DEPTH 2
 
 void
-field_init(struct playfield *field);
+field_init(struct field *field);
 
 int
-field_update(struct playfield *field, Button act);
+field_update(struct field *field, Button act);
 
 /* Allocate a new node with a copy of _init_ as its state */
 FieldNode *
-create_node(void *region, struct playfield const *init)
+create_node(void *region, struct field const *init)
 {
 	FieldNode *ret;
 
@@ -26,7 +26,7 @@ create_node(void *region, struct playfield const *init)
 	if (!ret)
 		return NULL;
 	memset(ret, 0, sizeof(*ret));
-	memcpy(&ret->field, init, sizeof(struct playfield));
+	memcpy(&ret->field, init, sizeof(struct field));
 	return ret;
 }
 
@@ -92,7 +92,7 @@ expand(void *region, FieldNode **stackp, FieldNode *parent)
  * columns.
  */
 static int
-h1(struct playfield *field)
+h1(struct field *field)
 {
 	int top;
 	size_t i, j;
@@ -115,7 +115,7 @@ h1(struct playfield *field)
 
 /* Heuristic 2: Calculate the aggregate height of all columns. */
 static int
-h2(struct playfield *field)
+h2(struct field *field)
 {
 	int top;
 	size_t i, j;
@@ -136,7 +136,7 @@ h2(struct playfield *field)
  * as any open space with a filled space above it in the same column.
  */
 static int
-h3(struct playfield *field)
+h3(struct field *field)
 {
 	int cnt;
 	size_t i, j;
@@ -160,7 +160,7 @@ h3(struct playfield *field)
  * is multiplied by a certain weight depending on how valuable it is deemed.
  */
 static int
-evaluate(struct playfield *field, double weight[3])
+evaluate(struct field *field, double weight[3])
 {
 	int score = 0;
 
@@ -213,7 +213,7 @@ ai_size_requirement()
 }
 
 Button const *
-ai_plan(void *region, double weight[3], struct playfield const *init) {
+ai_plan(void *region, double weight[3], struct field const *init) {
 	FieldNode *stack;
 	FieldNode *goal;
 	FieldNode *fp;

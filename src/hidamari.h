@@ -11,14 +11,17 @@
 #include "vec2.h"
 #include "type.h"
 
+#define FIELD_HEIGHT_VIS 23 - 3
+#define FIELD_WIDTH_VIS 12
+
 #define HIDAMARI_HEIGHT 23
 #define HIDAMARI_WIDTH 12
 
 #define HIDAMARI_HEIGHT_VISIBLE (HIDAMARI_HEIGHT - 3)
 #define HIDAMARI_WIDTH_VISIBLE (HIDAMARI_WIDTH)
 
-#define HIDAMARI_BUFFER_HEIGHT (HIDAMARI_HEIGHT_VISIBLE + 3 + 3)
-#define HIDAMARI_BUFFER_WIDTH HIDAMARI_WIDTH * 2
+#define HIDAMARI_BUFFER_HEIGHT 24
+#define HIDAMARI_BUFFER_WIDTH 32
 
 /* Cursor index */
 #define HIDAMARI_MAIN_CURSOR 0
@@ -46,7 +49,18 @@ enum input {
 };
 
 enum tile {
-	TILE_0,
+	TILE_SPACE = 0,
+	TILE_PIECE_I,
+	TILE_PIECE_J,
+	TILE_PIECE_L,
+	TILE_PIECE_O,
+	TILE_PIECE_S,
+	TILE_PIECE_T,
+	TILE_PIECE_Z,
+	TILE_FALLEN,
+	TILE_WALL,
+	TILE_PLAIN,
+	TILE_0 = 48,
 	TILE_1,
 	TILE_2,
 	TILE_3,
@@ -56,54 +70,58 @@ enum tile {
 	TILE_7,
 	TILE_8,
 	TILE_9,
-	TILE_PLACEHOLDER1,
-	TILE_PLACEHOLDER2,
-	TILE_PLACEHOLDER3,
-	TILE_PLACEHOLDER4,
-	TILE_PLACEHOLDER5,
-	TILE_PLACEHOLDER6,
-	TILE_SPACE,
+	TILE_A = 65,
+	TILE_B,
+	TILE_C,
+	TILE_D,
+	TILE_E,
+	TILE_F,
+	TILE_G,
+	TILE_H,
 	TILE_I,
 	TILE_J,
+	TILE_K,
 	TILE_L,
+	TILE_M,
+	TILE_N,
 	TILE_O,
+	TILE_P,
+	TILE_Q,
+	TILE_R,
 	TILE_S,
 	TILE_T,
+	TILE_U,
+	TILE_V,
+	TILE_W,
+	TILE_X,
+	TILE_Y,
 	TILE_Z,
-	TILE_FALLEN,
-	TILE_WALL,
-	TILE_PLAIN,
-	TILE_PLACEHOLDER7,
-	TILE_PLACEHOLDER8,
-	TILE_PLACEHOLDER9,
-	TILE_PLACEHOLDER10,
-	TILE_PLACEHOLDER11,
-	TILE_CHAR_A,
-	TILE_CHAR_B,
-	TILE_CHAR_C,
-	TILE_CHAR_D,
-	TILE_CHAR_E,
-	TILE_CHAR_F,
-	TILE_CHAR_G,
-	TILE_CHAR_H,
-	TILE_CHAR_I,
-	TILE_CHAR_J,
-	TILE_CHAR_K,
-	TILE_CHAR_L,
-	TILE_CHAR_M,
-	TILE_CHAR_N,
-	TILE_CHAR_O,
-	TILE_CHAR_P,
-	TILE_CHAR_Q,
-	TILE_CHAR_R,
-	TILE_CHAR_S,
-	TILE_CHAR_T,
-	TILE_CHAR_U,
-	TILE_CHAR_V,
-	TILE_CHAR_W,
-	TILE_CHAR_X,
-	TILE_CHAR_Y,
-	TILE_CHAR_Z,
+	TILE_a = 97,
+	TILE_b,
+	TILE_c,
+	TILE_d,
+	TILE_e,
+	TILE_f,
+	TILE_g,
+	TILE_h,
+	TILE_i,
+	TILE_j,
+	TILE_k,
+	TILE_l,
+	TILE_m,
+	TILE_n,
+	TILE_o,
+	TILE_p,
+	TILE_q,
+	TILE_r,
+	TILE_s,
+	TILE_t,
+	TILE_u,
+	TILE_v,
+	TILE_w,
+	TILE_x,
+	TILE_y,
+	TILE_z,
 	TILE_LAST, /* Not an actual tile, just used for enum length */
 };
 
@@ -135,10 +153,10 @@ struct piece {
 	int x;
 	int y;
 	enum shape shape : 4;
-	u8 orientation : 3;
+	u8 dir : 3;
 };
 
-struct playfield {
+struct field {
 	/* Scoring */
 	u8 level;
 	u32 score; 
@@ -165,11 +183,11 @@ struct ai_state {
 struct hidamari {
 	enum game_state state;
 	uint8_t cursor[2];
-	struct playfield field;
+	struct field field;
 	struct ai_state ai;
 };
 
-/* Update the playfield by one timestep:
+/* Update the field by one timestep:
  *	Perform the player action;
  *	Move current piece downwards;
  *	Clear any rows;

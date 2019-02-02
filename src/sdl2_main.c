@@ -14,7 +14,7 @@
 
 #define SCRN_W 256
 #define SCRN_H 192
-#define TILE_S 16
+#define TILE_S 8 
 
 void
 render(SDL_Renderer *renderer, SDL_Texture *texture, struct drawbuf *buf)
@@ -74,7 +74,7 @@ main()
 	screen = SDL_CreateWindow("Hidamari - SDL2",
 	                                      SDL_WINDOWPOS_UNDEFINED,
 	                                      SDL_WINDOWPOS_UNDEFINED,
-	                                      256, 192,
+	                                      SCRN_W, SCRN_H,
 	                                      SDL_WINDOW_RESIZABLE |
 	                                      SDL_WINDOW_OPENGL);
 
@@ -87,11 +87,11 @@ main()
 		return 1;
 
 	/* Set window properties */
-	SDL_RenderSetLogicalSize(renderer, 512, 512);
+	SDL_RenderSetLogicalSize(renderer, SCRN_W, SCRN_H);
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
 
 	/* Loads the texture map for the game */
-	SDL_Surface *tileset_sf = IMG_Load("res/tileset/default.png");
+	SDL_Surface *tileset_sf = IMG_Load("res/tileset/8px.png");
 	SDL_Texture *tileset_hw = SDL_CreateTextureFromSurface(renderer, tileset_sf);
 
 	SDL_Texture * texture = SDL_CreateTexture(renderer,

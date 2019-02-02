@@ -195,23 +195,7 @@ buf_write_cstr(struct drawbuf *buf, size_t x, size_t y, char const *str)
 	}
 }
 
-static void
-draw_field(struct drawbuf *buf, size_t x_offset, size_t y_offset, struct playfield *field)
-{
-	size_t i;
-	size_t x, y;
-	enum tile score[HIDAMARI_WIDTH - 2 + 1] = {0};
-
-	/* Draw the borders */
-	for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
-		buf->tile[x_offset][y_offset + y] = TILE_WALL;
-		buf->tile[x_offset + HIDAMARI_WIDTH - 1][y_offset + y] = TILE_WALL;
-	}
-
-	for (x = 1; x < HIDAMARI_BUFFER_WIDTH - 1; ++x) {
-		buf->tile[x_offset + x][y_offset] = TILE_WALL;
-	}
-
+#if 0
 	/* Draw the next piece prievew area */
 	for (x = 1; x < HIDAMARI_WIDTH - 1; ++x) {
 		for (y = HIDAMARI_HEIGHT_VISIBLE + 3; y < HIDAMARI_HEIGHT_VISIBLE + 6; ++y) {
@@ -242,22 +226,42 @@ draw_field(struct drawbuf *buf, size_t x_offset, size_t y_offset, struct playfie
 		buf->tile[x][y] = TILE_SPACE + 1 + field->next;
 	}
 
+	enum tile score[FIELD_WIDTH_VIS - 2 + 1] = {0};
 	/* Draw the scoreboard */
 	snprintf((char *)score, sizeof(score) + 1, "%010d", field->score);
 	for (x = 1; x < HIDAMARI_WIDTH_VISIBLE - 1; ++x) {
 		for (y = HIDAMARI_HEIGHT_VISIBLE; y < HIDAMARI_HEIGHT_VISIBLE + 3; ++y) {
 			if (HIDAMARI_HEIGHT_VISIBLE + 1 == y) {
-				buf_set(buf, x_offset + x, y_offset + y, score[x - 1] - 48, (u8[]){0, 0 ,0});
+				buf_set(buf, x_offset + x, y_offset + y, score[x - 1], (u8[]){0, 0 ,0});
 			} else {
 				buf->tile[x_offset + x][y_offset + y] = TILE_WALL;
 			}
 		}
 	}
-	/* Draw the playfield */
-	for (x = 1; x < HIDAMARI_WIDTH_VISIBLE - 1; ++x) {
-		for (y = y_offset + 1; y < y_offset + HIDAMARI_HEIGHT_VISIBLE; ++y) {
+
+#endif
+
+static void
+draw_field(struct drawbuf *buf, size_t x_offset, size_t y_offset, struct field *field)
+{
+	size_t i;
+	size_t x, y;
+
+	/* Draw the borders */
+	for (y = 0; y < FIELD_HEIGHT_VIS; ++y) {
+		buf->tile[x_offset][y_offset + y] = TILE_WALL;
+		buf->tile[x_offset + FIELD_WIDTH_VIS - 1][y_offset + y] = TILE_WALL;
+	}
+
+	for (x = 1; x < FIELD_WIDTH_VIS - 1; ++x) {
+		buf->tile[x_offset + x][y_offset] = TILE_WALL;
+	}
+
+	/* Draw the field */
+	for (x = 1; x < FIELD_WIDTH_VIS - 1; ++x) {
+		for (y = 1; y < FIELD_HEIGHT_VIS; ++y) {
 			if (field->grid[y] & 1 << x) {
-				buf->tile[x_offset + x][y_offset +y] = TILE_FALLEN;
+				buf->tile[x_offset + x][y_offset + y] = TILE_FALLEN;
 			} else {
 				buf->tile[x_offset + x][y_offset + y] = TILE_SPACE;
 			}
@@ -266,13 +270,13 @@ draw_field(struct drawbuf *buf, size_t x_offset, size_t y_offset, struct playfie
 	/* Draw the current piece */
 	for (i = 0; i < 4; ++i) {
 		x = x_offset + shapes[field->current.shape]
-		                              [field->current.orientation]
-		                              [i].x + field->current.x;
+		                     [field->current.dir]
+		                     [i].x + field->current.x;
 		y = y_offset + field->current.y
 			- shapes[field->current.shape]
-		                              [field->current.orientation]
+		                              [field->current.dir]
 		                              [i].y;
-		if (y >= HIDAMARI_HEIGHT_VISIBLE)
+		if (y >= FIELD_HEIGHT_VIS)
 			continue;
 		buf->tile[x][y] = TILE_SPACE + 1 + field->current.shape;
 	}
@@ -280,7 +284,7 @@ draw_field(struct drawbuf *buf, size_t x_offset, size_t y_offset, struct playfie
 
 /* Shift all lines above a certain y value down by one */
 static void
-shift_lines(struct playfield *field, size_t y_start)
+shift_lines(struct field *field, size_t y_start)
 {
 	size_t y;
 
@@ -290,7 +294,7 @@ shift_lines(struct playfield *field, size_t y_start)
 }
 
 static void
-clear_lines(struct playfield *field)
+clear_lines(struct field *field)
 {
 	size_t y = 1;
 	size_t combo = 0;
@@ -357,7 +361,7 @@ clear_lines(struct playfield *field)
 }
 
 static bool
-is_game_over(struct playfield *field)
+is_game_over(struct field *field)
 {
 	if (field->grid[HIDAMARI_HEIGHT - 1] & 0x7FE)
 		return true;
@@ -366,10 +370,10 @@ is_game_over(struct playfield *field)
 
 /* Get a new hidamari into play, and update the next hidamari */
 static void
-get_next_hidamari(struct playfield *field)
+get_next_hidamari(struct field *field)
 {
 	field->current.shape = field->next;
-	field->current.orientation = 0;
+	field->current.dir = 0;
 	field->current.x = 10 / 2 - 1;
 	field->current.y = HIDAMARI_HEIGHT - 1;
 
@@ -389,8 +393,8 @@ is_collision(struct piece const *t, u12 const grid[HIDAMARI_HEIGHT])
 	int x, y;
 
 	for (i = 0; i < 4; ++i) {
-		x = shapes[t->shape][t->orientation][i].x + t->x;
-		y = t->y - shapes[t->shape][t->orientation][i].y;
+		x = shapes[t->shape][t->dir][i].x + t->x;
+		y = t->y - shapes[t->shape][t->dir][i].y;
 		if (y < 0 || y > HIDAMARI_HEIGHT - 1
 		|| x < 0 || x > HIDAMARI_WIDTH - 1
 		|| (1 << x) & grid[y])
@@ -407,10 +411,10 @@ lock_piece(u12 grid[HIDAMARI_HEIGHT], struct piece const *t)
 	u12 x, y;
 
 	for (i = 0; i < 4; ++i) {
-		x = 1 << (shapes[t->shape][t->orientation][i].x + t->x);
-		y = t->y - shapes[t->shape][t->orientation][i].y;
+		x = 1 << (shapes[t->shape][t->dir][i].x + t->x);
+		y = t->y - shapes[t->shape][t->dir][i].y;
 
-		printf("%d - %d = %d\n", t->y, shapes[t->shape][t->orientation][i].y, y);
+		printf("%d - %d = %d\n", t->y, shapes[t->shape][t->dir][i].y, y);
 
 		grid[y] |= x;
 	}
@@ -418,7 +422,7 @@ lock_piece(u12 grid[HIDAMARI_HEIGHT], struct piece const *t)
 
 /* Move the current piece in the given direction */
 static bool
-move_current(struct playfield *field, int x, int y)
+move_current(struct field *field, int x, int y)
 {
 	struct piece tmp = field->current;
 
@@ -457,17 +461,17 @@ r7system(enum shape bag[7])
 	
 /* Rotate the current hidamari */
 static void
-rotate_current(struct playfield *field, int delta)
+rotate_current(struct field *field, int delta)
 {
 	struct piece tmp = field->current;
 
-	tmp.orientation = MIN((u8)(tmp.orientation + delta) % 4, 3);
+	tmp.dir = MIN((u8)(tmp.dir + delta) % 4, 3);
 	if (!is_collision(&tmp, field->grid))
 		field->current = tmp;
 }
 
 void
-field_init(struct playfield *field)
+field_init(struct field *field)
 {
 	size_t i;
 
@@ -489,7 +493,7 @@ field_init(struct playfield *field)
 }
 
 int
-field_update(struct playfield *field, Button act)
+field_update(struct field *field, Button act)
 {
 	struct piece tmp;
 
@@ -576,11 +580,6 @@ hidamari_update(struct hidamari *game, Button in)
 void
 hidamari_render(struct drawbuf *buf, struct hidamari *game)
 {
-	draw_field(buf, 6, 0, &game->field);
-}
-
-void
-hidamari_ascii(struct hidamari *game)
-{
-	(void)game;
+	draw_field(buf, 0, 0, &game->field);
+	draw_field(buf, FIELD_WIDTH_VIS + 4, 0, &game->field);
 }
