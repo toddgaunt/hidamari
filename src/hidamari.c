@@ -396,7 +396,7 @@ is_collision(u12 const bitboard[HIDAMARI_HEIGHT], struct piece const *t)
 	int x, y;
 
 	for (i = 0; i < 4; ++i) {
-		x = shapes[t->shape][t->dir][i].x + t->x;
+		x = t->x + shapes[t->shape][t->dir][i].x;
 		y = t->y - shapes[t->shape][t->dir][i].y;
 
 		/* Edge detection */
@@ -470,7 +470,8 @@ rotate_current(struct field *field, i8 delta)
 {
 	struct piece tmp = field->current;
 
-	tmp.dir = MIN((u8)(tmp.dir + delta) % 4, 3);
+	
+	tmp.dir = (tmp.dir + delta + 4) % 4;
 	if (!is_collision(field->bitboard, &tmp))
 		field->current = tmp;
 }
