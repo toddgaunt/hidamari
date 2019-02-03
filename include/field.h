@@ -10,6 +10,9 @@
 #define FIELD_WIDTH 12
 #define FIELD_HEIGHT 23
 
+#define FIELD_WIDTH_VISIBLE (FIELD_WIDTH)
+#define FIELD_HEIGHT_VISIBLE ((FIELD_HEIGHT) - 3)
+
 enum shape {
 	SHAPE_I,        
 	SHAPE_J,        
@@ -53,6 +56,6 @@ enum gamestate
 field_update(struct field *field, enum button in);
 
 void
-field_draw(struct vga *vp, struct field *fp, int x_offset, int y_offset);
+field_draw(struct vga *vp, struct field *fp, int scale, int x_offset, int y_offset);
 
 #endif

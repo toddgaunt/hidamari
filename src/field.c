@@ -444,35 +444,35 @@ field_update(struct field *field, enum button in)
 }
 
 void
-field_draw(struct vga *vp, struct field *fp, int x_offset, int y_offset)
+field_draw(struct vga *vp, struct field *fp, int scale, int x_offset, int y_offset)
 {
 	int i, x, y;
 	struct vga_rect r;
-	r.w = 8;
-	r.h = 8;
+	r.w = scale;
+	r.h = scale;
 
 	/* Draw the borders */
-	for (y = 0; y < FIELD_HEIGHT - 3; ++y) {
-		r.x = (x_offset) * 8;
-		r.y = (y_offset + y) * 8;
+	for (y = 0; y < FIELD_HEIGHT_VISIBLE; ++y) {
+		r.x = (x_offset) * scale;
+		r.y = (y_offset + y) * scale;
 		vga_fill_rect(vp, &r, 0xFF0000);
 
-		r.x = (x_offset + FIELD_WIDTH - 1) * 8;
-		r.y = (y_offset + y)  * 8;
+		r.x = (x_offset + FIELD_WIDTH_VISIBLE - 1) * scale;
+		r.y = (y_offset + y)  * scale;
 		vga_fill_rect(vp, &r, 0xFF0000);
 	}
 
-	for (x = 1; x < FIELD_WIDTH - 1; ++x) {
-		r.x = (x_offset + x) * 8;
-		r.y = (y_offset) * 8;
+	for (x = 1; x < FIELD_WIDTH_VISIBLE - 1; ++x) {
+		r.x = (x_offset + x) * scale;
+		r.y = (y_offset) * scale;
 		vga_fill_rect(vp, &r, 0xFF0000);
 	}
 
 	/* Draw the field */
-	for (x = 1; x < FIELD_WIDTH - 1; ++x) {
-		for (y = 1; y < FIELD_HEIGHT - 3; ++y) {
-			r.x = (x_offset + x) * 8;
-			r.y = (y_offset + y) * 8;
+	for (x = 1; x < FIELD_WIDTH_VISIBLE - 1; ++x) {
+		for (y = 1; y < FIELD_HEIGHT_VISIBLE; ++y) {
+			r.x = (x_offset + x) * scale;
+			r.y = (y_offset + y) * scale;
 			if (fp->bitboard[y] & 1 << x) {
 				vga_fill_rect(vp, &r, 0x00FF00);
 			} else {
@@ -491,10 +491,10 @@ field_draw(struct vga *vp, struct field *fp, int x_offset, int y_offset)
 		               - shapes[fp->current.shape]
 		                       [fp->current.dir]
 		                       [i].y;
-		if (r.y >= FIELD_HEIGHT - 3)
+		if (r.y >= FIELD_HEIGHT_VISIBLE)
 			continue;
-		r.x *= 8;
-		r.y *= 8;
+		r.x *= scale;
+		r.y *= scale;
 		vga_fill_rect(vp, &r, 0xFFFFFF);
 	}
 }
