@@ -11,6 +11,7 @@
 #include "ai.h"
 #include "hidamari.h"
 #include "region.h"
+#include "vga.h"
 
 #define SCRN_W 256
 #define SCRN_H 192
@@ -56,17 +57,21 @@ draw(SDL_Renderer *renderer, SDL_Texture *texture)
 int
 main()
 {
-	uint32_t acc, dt;
-	uint32_t last = SDL_GetTicks();
+	uint32_t acc;
+	uint32_t dt;
+	uint32_t last;
 	uint32_t now;
 	uint32_t frame_time;
+
 	SDL_Window *screen;
 	SDL_Event event;
-	dt = 1000 / 60; /* miliseconds / frames */
-	acc = 0.0;
+
 	Button button = BTN_NONE;
-	struct hidamari game = {0};
-	struct drawbuf buf = {0};
+	struct hidamari game;
+	//struct drawbuf buf = {0};
+
+	uint32_t *px = malloc(sizeof(*px) * SCRN_W * SCRN_H);
+	struct vga vga = vga_init(px, SCRN_W, SCRN_H);
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		return EXIT_FAILURE;
@@ -91,13 +96,20 @@ main()
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
 
 	/* Loads the texture map for the game */
-	SDL_Surface *tileset_sf = IMG_Load("res/tileset/8px.png");
-	SDL_Texture *tileset_hw = SDL_CreateTextureFromSurface(renderer, tileset_sf);
+	//SDL_Surface *tileset_sf = IMG_Load("res/tileset/8px.png");
+	//SDL_Texture *tileset_hw = SDL_CreateTextureFromSurface(renderer, tileset_sf);
 
+	//SDL_Texture *texture = SDL_CreateTexture(renderer,
+	//SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, SCRN_W, SCRN_H);
+	
 	SDL_Texture * texture = SDL_CreateTexture(renderer,
 	SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, SCRN_W, SCRN_H);
 
 	srand(time(NULL));
+	last = SDL_GetTicks();
+	dt = 1000 / 60; /* miliseconds / frames */
+	acc = 0.0;
+	hidamari_init(&game);
 	for (;;) {
 		// Uncomment and change the number below to test lag!
 		//usleep(100000);
@@ -161,10 +173,11 @@ main()
 			button = BTN_NONE;
 		}
 		//usleep((dt - acc) * 1000);
-		//SDL_UpdateTexture(texture, NULL, game.vga.buf, game.vga.w * sizeof(*game.vga.buf));
-		//draw(renderer, texture);
-		hidamari_render(&buf, &game);
-		render(renderer, tileset_hw, &buf);
+		//hidamari_render(&buf, &game);
+		hidamari_render2(&vga, &game);
+		SDL_UpdateTexture(texture, NULL, vga.px, vga.w * sizeof(*vga.px));
+		draw(renderer, texture);
+		//render(renderer, tileset_hw, &buf);
 	}
 endgame:
 	SDL_DestroyWindow(screen);

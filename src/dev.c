@@ -6,42 +6,26 @@
 #include <time.h>
 
 #include "hidamari.h"
-#include "region.h"
-#include "ai.h"
+#include "vga.h"
 
-static void
-dump_field(HidamariBuffer const *buf)
-{
-	size_t y, x;
-
-	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
-		for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
-			if (HIDAMARI_TILE_SPACE == buf->tile[x][y]) {
-				putc('.', stdout);
-			} else {
-				putc('#', stdout);
-			}
-			putc(' ', stdout);
-		}
-		putc('\n', stdout);
-	}
-	printf("--\n");
-}
+#define SCRN_W 256
+#define SCRN_H 192
+#define TILE_S 8 
 
 int
 main()
 {
-	HidamariGame game = {0};
+	Button button = BTN_NONE;
+	struct hidamari game;
+
+	uint32_t *px = malloc(sizeof(*px) * SCRN_W * SCRN_H);
+	struct vga vga = vga_init(px, SCRN_W, SCRN_H);
 
 	srand(time(NULL));
-	game.ai.active = false;
-	game.state = HIDAMARI_GS_GAME_PLAYING;
+	hidamari_init(&game);
 	for (;;) {
-		printf("top-right: %d, %d\n",
-				game.field.current.pos.x,
-				game.field.current.pos.y);
-		dump_field(&game.buf);
-		hidamari_update(&game, BUTTON_NONE);
+		hidamari_update(&game, BTN_NONE);
+		hidamari_render2(&vga, &game);
 	}
 	return 0;
 }

@@ -12,6 +12,7 @@
 #include "ai.h"
 #include "hidamari.h"
 #include "region.h"
+#include "vga.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -179,73 +180,8 @@ static struct vec2 const shapes[SHAPE_LAST][4][4] = {
 	}
 #endif
 
-static inline void
-buf_set(struct drawbuf *buf, size_t x, size_t y, enum tile tile, u8 const color[3])
-{
-	buf->tile[x][y] = tile;
-	buf->color[x][y][0] = color[0];
-	buf->color[x][y][1] = color[1];
-	buf->color[x][y][2] = color[2];
-}
-
-static inline void
-buf_write_cstr(struct drawbuf *buf, size_t x, size_t y, char const *str)
-{
-	size_t i;
-
-	for (i = 0; i < strlen(str); ++i) {
-		buf->tile[x + i][y] = str[i] - 33;
-	}
-}
-
-#if 0
-	/* Draw the next piece prievew area */
-	for (x = 1; x < HIDAMARI_WIDTH - 1; ++x) {
-		for (y = HIDAMARI_HEIGHT_VISIBLE + 3; y < HIDAMARI_HEIGHT_VISIBLE + 6; ++y) {
-			if (HIDAMARI_HEIGHT_VISIBLE + 4 == y
-			|| HIDAMARI_HEIGHT_VISIBLE + 3 == y) {
-				buf->tile[x_offset + x][y_offset + y] = TILE_SPACE;
-			} else {
-				buf->tile[x_offset + x][y_offset + y] = TILE_WALL;
-			}
-		}
-	}
-
-	/* Draw the actual next piece */
-	for (i = 0; i < 4; ++i) {
-		x = x_offset + HIDAMARI_WIDTH_VISIBLE / 2 - 2
-			+ shapes[field->next]
-		                              [0]
-		                              [i].x;
-		y = y_offset + (HIDAMARI_HEIGHT_VISIBLE + 4)
-			- shapes[field->next]
-		                              [0]
-		                              [i].y;
-		/* SPECIAL CASE: O needs to be elevated by a single position */
-		if (SHAPE_O == field->next)
-			++y;
-		/* if (y >= HIDAMARI_HEIGHT_VISIBLE + 4) */
-		/* 	continue; */
-		buf->tile[x][y] = TILE_SPACE + 1 + field->next;
-	}
-
-	enum tile score[FIELD_WIDTH_VIS - 2 + 1] = {0};
-	/* Draw the scoreboard */
-	snprintf((char *)score, sizeof(score) + 1, "%010d", field->score);
-	for (x = 1; x < HIDAMARI_WIDTH_VISIBLE - 1; ++x) {
-		for (y = HIDAMARI_HEIGHT_VISIBLE; y < HIDAMARI_HEIGHT_VISIBLE + 3; ++y) {
-			if (HIDAMARI_HEIGHT_VISIBLE + 1 == y) {
-				buf_set(buf, x_offset + x, y_offset + y, score[x - 1], (u8[]){0, 0 ,0});
-			} else {
-				buf->tile[x_offset + x][y_offset + y] = TILE_WALL;
-			}
-		}
-	}
-
-#endif
-
 static void
-draw_field(struct drawbuf *buf, size_t x_offset, size_t y_offset, struct field *field)
+draw_field_old(struct drawbuf *buf, size_t x_offset, size_t y_offset, struct field *field)
 {
 	size_t i;
 	size_t x, y;
@@ -291,7 +227,7 @@ shift_lines(struct field *field, size_t y_start)
 {
 	size_t y;
 
-	for (y = y_start; y < HIDAMARI_HEIGHT - 1; ++y) {
+	for (y = y_start; y < FIELD_HEIGHT - 1; ++y) {
 		field->bitboard[y] = field->bitboard[y + 1];
 	}
 }
@@ -303,7 +239,7 @@ clear_lines(struct field *field)
 	size_t combo = 0;
 	size_t score;
 
-	while (y < HIDAMARI_HEIGHT) {
+	while (y < FIELD_HEIGHT) {
 		if (2046 == (field->bitboard[y] & 2046)) {
 			shift_lines(field, y);
 			combo += 1;
@@ -366,7 +302,7 @@ clear_lines(struct field *field)
 static bool
 is_game_over(struct field *field)
 {
-	if (field->bitboard[HIDAMARI_HEIGHT - 1] & 0x7FE)
+	if (field->bitboard[FIELD_HEIGHT - 1] & 0x7FE)
 		return true;
 	return false;
 }
@@ -378,7 +314,7 @@ get_next_hidamari(struct field *field)
 	field->current.shape = field->next;
 	field->current.dir = 0;
 	field->current.x = 10 / 2 - 1;
-	field->current.y = HIDAMARI_HEIGHT - 1;
+	field->current.y = FIELD_HEIGHT - 1;
 
 	if (field->bag_pos >= 7) {
 		r7system(field->bag);
@@ -390,7 +326,7 @@ get_next_hidamari(struct field *field)
 
 /* Check if the Hidamari would collide in the given bitboard, at the given x,y coordinates */
 static bool
-is_collision(u12 const bitboard[HIDAMARI_HEIGHT], struct piece const *t)
+is_collision(u12 const bitboard[FIELD_HEIGHT], struct piece const *t)
 {
 	int i;
 	int x, y;
@@ -413,7 +349,7 @@ is_collision(u12 const bitboard[HIDAMARI_HEIGHT], struct piece const *t)
 
 /* Lock the current piece in place by copying it to the static piece bitboard */
 static void
-lock_piece(u16 bitboard[HIDAMARI_HEIGHT], struct piece const *t)
+lock_piece(u16 bitboard[FIELD_HEIGHT], struct piece const *t)
 {
 	i8 i;
 	u16 x, y;
@@ -494,7 +430,7 @@ field_init(struct field *field)
 
 	/* Initialize the borders */
 	field->bitboard[0] |= 0xFFF;
-	for (i = 1; i < HIDAMARI_HEIGHT; ++i) {
+	for (i = 1; i < FIELD_HEIGHT; ++i) {
 		field->bitboard[i] = 0x801;
 	}
 }
@@ -560,19 +496,26 @@ field_update(struct field *field, Button in)
  */
 
 void
-hidamari_update(struct hidamari *game, Button in)
+hidamari_init(struct hidamari *game)
 {
 	static Button const dbv = BTN_NONE;
+
+	memset(game, 0, sizeof(*game));
+	game->state = GAMESTATE_PLAYING;
+	game->ai.region = region_create(ai_size_requirement());
+	game->ai.planstr = &dbv;
+	game->ai.active = false;
+	field_init(&game->field);
+}
+
+void
+hidamari_update(struct hidamari *game, Button in)
+{
 	double weight[3] = {0.848058, 2.304684, 1.405450};
 
 	switch(game->state) {
 	case GAMESTATE_INIT:
-		memset(game, 0, sizeof(*game));
-		game->state = GAMESTATE_PLAYING;
-		game->ai.region = region_create(ai_size_requirement());
-		game->ai.planstr = &dbv;
-		game->ai.active = false;
-		field_init(&game->field);
+		hidamari_init(game);
 		break;
 	case GAMESTATE_PLAYING:
 		game->state = field_update(&game->field, in);
@@ -587,6 +530,69 @@ hidamari_update(struct hidamari *game, Button in)
 void
 hidamari_render(struct drawbuf *buf, struct hidamari *game)
 {
-	draw_field(buf, 0, 0, &game->field);
-	draw_field(buf, FIELD_WIDTH + 4, 0, &game->field);
+	draw_field_old(buf, 0, 0, &game->field);
+	draw_field_old(buf, FIELD_WIDTH + 4, 0, &game->field);
+}
+
+void
+draw_field(struct vga *vp, struct field *fp, int x_offset, int y_offset)
+{
+	int i, x, y;
+	struct vga_rect r;
+	r.w = 8;
+	r.h = 8;
+
+	/* Draw the borders */
+	for (y = 0; y < FIELD_HEIGHT - 3; ++y) {
+		r.x = (x_offset) * 8;
+		r.y = (y_offset + y) * 8;
+		vga_fill_rect(vp, &r, 0xFF0000);
+
+		r.x = (x_offset + FIELD_WIDTH - 1) * 8;
+		r.y = (y_offset + y)  * 8;
+		vga_fill_rect(vp, &r, 0xFF0000);
+	}
+
+	for (x = 1; x < FIELD_WIDTH - 1; ++x) {
+		r.x = (x_offset + x) * 8;
+		r.y = (y_offset) * 8;
+		vga_fill_rect(vp, &r, 0xFF0000);
+	}
+
+	/* Draw the field */
+	for (x = 1; x < FIELD_WIDTH - 1; ++x) {
+		for (y = 1; y < FIELD_HEIGHT - 3; ++y) {
+			r.x = (x_offset + x) * 8;
+			r.y = (y_offset + y) * 8;
+			if (fp->bitboard[y] & 1 << x) {
+				vga_fill_rect(vp, &r, 0x00FF00);
+			} else {
+				vga_fill_rect(vp, &r, 0x000000);
+			}
+		}
+	}
+
+	/* Draw the current piece */
+	for (i = 0; i < 4; ++i) {
+		r.x = x_offset + fp->current.x
+		               + shapes[fp->current.shape]
+		                       [fp->current.dir]
+		                       [i].x;
+		r.y = y_offset + fp->current.y
+		               - shapes[fp->current.shape]
+		                       [fp->current.dir]
+		                       [i].y;
+		if (r.y >= FIELD_HEIGHT - 3)
+			continue;
+		r.x *= 8;
+		r.y *= 8;
+		vga_fill_rect(vp, &r, 0xFFFFFF);
+	}
+}
+
+void
+hidamari_render2(struct vga *vp, struct hidamari *game)
+{
+	vga_fill(vp, 0x000000);
+	draw_field(vp, &game->field, 0, 0);
 }

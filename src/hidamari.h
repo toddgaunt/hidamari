@@ -185,6 +185,9 @@ struct hidamari {
 	struct ai_state ai;
 };
 
+void
+hidamari_init(struct hidamari *game);
+
 /* Update the field by one timestep:
  *	Perform the player action;
  *	Move current piece downwards;
