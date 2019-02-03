@@ -25,7 +25,6 @@ void
 vga_fill_rect(struct vga *vp, struct vga_rect *dst, uint32_t color)
 {
 	int i, j;
-	int index;
 
 	for (i = 0; i < dst->h; ++i) {
 		for (j = 0; j < dst->w; ++j) {

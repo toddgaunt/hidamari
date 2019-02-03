@@ -8,43 +8,12 @@
 #include <SDL2/SDL_image.h>
 #include <unistd.h>
 
-#include "ai.h"
 #include "hidamari.h"
-#include "region.h"
 #include "vga.h"
 
 #define SCRN_W 256
 #define SCRN_H 192
 #define TILE_S 8 
-
-void
-render(SDL_Renderer *renderer, SDL_Texture *texture, struct drawbuf *buf)
-{
-	int i, j;
-	SDL_Rect src_r = {.h = TILE_S, .w = TILE_S, .x = 0, .y = 0};
-	SDL_Rect dest_r = {.h = TILE_S, .w = TILE_S, .x = 0, .y = 0};
-	char tile;
-
-	SDL_RenderClear(renderer);
-	/* Render the static grid */
-	for (i = 0; i < HIDAMARI_BUFFER_WIDTH; ++i) {
-		for (j = 0; j < HIDAMARI_BUFFER_HEIGHT; ++j) {
-			tile = buf->tile[HIDAMARI_BUFFER_WIDTH - 1 - i]
-				[HIDAMARI_BUFFER_HEIGHT - 1 -j];
-			if (TILE_SPACE == tile)
-				continue;
-			dest_r.x = TILE_S * (HIDAMARI_BUFFER_WIDTH - 1 - i);
-			dest_r.y = TILE_S * j;
-			src_r.x = TILE_S * (tile % 16);
-			src_r.y = TILE_S * (tile / 16);
-			SDL_RenderCopy(renderer, texture, &src_r, &dest_r);
-		}
-	}
-
-	/* Background color */
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderPresent(renderer); 
-}
 
 void
 draw(SDL_Renderer *renderer, SDL_Texture *texture)
@@ -66,9 +35,8 @@ main()
 	SDL_Window *screen;
 	SDL_Event event;
 
-	Button button = BTN_NONE;
+	enum button in = BTN_NONE;
 	struct hidamari game;
-	//struct drawbuf buf = {0};
 
 	uint32_t *px = malloc(sizeof(*px) * SCRN_W * SCRN_H);
 	struct vga vga = vga_init(px, SCRN_W, SCRN_H);
@@ -94,13 +62,6 @@ main()
 	/* Set window properties */
 	SDL_RenderSetLogicalSize(renderer, SCRN_W, SCRN_H);
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
-
-	/* Loads the texture map for the game */
-	//SDL_Surface *tileset_sf = IMG_Load("res/tileset/8px.png");
-	//SDL_Texture *tileset_hw = SDL_CreateTextureFromSurface(renderer, tileset_sf);
-
-	//SDL_Texture *texture = SDL_CreateTexture(renderer,
-	//SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, SCRN_W, SCRN_H);
 	
 	SDL_Texture * texture = SDL_CreateTexture(renderer,
 	SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, SCRN_W, SCRN_H);
@@ -128,58 +89,63 @@ main()
 					case SDLK_w:
 					case SDLK_k:
 					case SDLK_UP:
-						button = BTN_UP;
+						in = BTN_UP;
 						break;
 					case SDLK_s:
 					case SDLK_j:
 					case SDLK_DOWN:
-						button = BTN_DOWN;
+						in = BTN_DOWN;
 						break;
 					case SDLK_d:
 					case SDLK_l:
 					case SDLK_RIGHT:
-						button = BTN_RIGHT;
+						in = BTN_RIGHT;
 						break;
 					case SDLK_a:
 					case SDLK_h:
 					case SDLK_LEFT:
-						button = BTN_LEFT;
+						in = BTN_LEFT;
 						break;
 					case SDLK_q:
 					case SDLK_u:
 					case SDLK_z:
 					case SDLK_LCTRL:
-						button = BTN_L;
+						in = BTN_L;
 						break;
 					case SDLK_e:
 					case SDLK_i:
 					case SDLK_x:
 					case SDLK_RCTRL:
-						button = BTN_R;
+						in = BTN_R;
 						break;
 					case SDLK_RETURN:
 					case SDLK_SPACE:
-						button = BTN_B;
+						in = BTN_B;
 						break;
 					default:
-						button = BTN_NONE;
+						in = BTN_NONE;
 						break;
 					}
 					break;
 				}
 			}
-			hidamari_update(&game, button);
+			hidamari_update(&game, in);
 			acc -= dt;
-			button = BTN_NONE;
+			in = BTN_NONE;
 		}
-		//usleep((dt - acc) * 1000);
-		//hidamari_render(&buf, &game);
-		hidamari_render2(&vga, &game);
+		hidamari_render(&vga, &game);
 		SDL_UpdateTexture(texture, NULL, vga.px, vga.w * sizeof(*vga.px));
 		draw(renderer, texture);
-		//render(renderer, tileset_hw, &buf);
 	}
 endgame:
 	SDL_DestroyWindow(screen);
 	SDL_DestroyRenderer(renderer);
 }
+
+
+	/* Loads the texture map for the game */
+	//SDL_Surface *tileset_sf = IMG_Load("res/tileset/8px.png");
+	//SDL_Texture *tileset_hw = SDL_CreateTextureFromSurface(renderer, tileset_sf);
+
+	//SDL_Texture *texture = SDL_CreateTexture(renderer,
+	//SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, SCRN_W, SCRN_H);

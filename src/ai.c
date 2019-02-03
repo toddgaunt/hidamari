@@ -14,7 +14,7 @@ void
 field_init(struct field *field);
 
 int
-field_update(struct field *field, Button act);
+field_update(struct field *field, enum button act);
 
 /* Allocate a new node with a copy of _init_ as its state */
 FieldNode *
@@ -35,7 +35,7 @@ create_node(void *region, struct field const *init)
  */
 int
 derive(void *region, FieldNode **stackp, FieldNode *parent,
-		size_t n_action, Button *action)
+		size_t n_action, enum button *action)
 {
 	size_t i;
 	FieldNode *child = create_node(region, &parent->field);
@@ -63,7 +63,7 @@ int
 expand(void *region, FieldNode **stackp, FieldNode *parent)
 {
 	size_t i, j;
-	Button *tmp;
+	enum button *tmp;
 
 	for (i = 0; i < 3; ++i) {
 		for (j = 0; j < 6; ++j) {
@@ -180,10 +180,10 @@ evaluate(struct field *field, double weight[3])
  * and return a vector of actions that must be taken in order to achieve the
  * goal state from the initial state fed into the program.
  */
-static Button *
+static enum button *
 mkplan(void *region, FieldNode *goal)
 {
-	Button *planstr;
+	enum button *planstr;
 	FieldNode *fp;
 	size_t n_move = 0;
 	size_t i;
@@ -212,7 +212,7 @@ ai_size_requirement()
 	return pow(36, DEPTH) * (sizeof(FieldNode) + 10);
 }
 
-Button const *
+enum button const *
 ai_plan(void *region, double weight[3], struct field const *init) {
 	FieldNode *stack;
 	FieldNode *goal;

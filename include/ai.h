@@ -14,7 +14,7 @@ typedef struct FieldNode FieldNode;
 struct FieldNode {
 	size_t g;
 	size_t n_action;
-	Button *action;
+	enum button *action;
 	struct field field;
 	FieldNode *parent;
 	FieldNode *next;
@@ -37,7 +37,7 @@ ai_size_requirement();
  * Return: An array of button inputs devised by the AI in order to achieve
  *	at a desirable state.
  */
-Button const *
+enum button const *
 ai_plan(void *region, double weight[3], struct field const *init);
 
 #endif
