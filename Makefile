@@ -4,7 +4,7 @@
 include config.mk
 
 MODULES :=
-SRC := sdl2_main.c hidamari.c vga.c field.c
+SRC := hidamari.c field.c
 
 # Project modules
 include $(patsubst %, src/%/module.mk, $(MODULES))
@@ -13,7 +13,7 @@ OBJ := $(patsubst %.c, src/%.o, $(filter %.c, $(SRC)))
 OBJ_D := $(patsubst %.c, src/%.o_d, $(filter %.c, $(SRC)))
 
 # Standard targets
-all: hidamari
+all: hidamari hidamari_d
 
 options:
 	@echo "Build options:"
@@ -40,11 +40,11 @@ clean:
 	@$(CC) $(CFLAGS_D) -c -o $@ $<
 
 # Targets
-hidamari: $(OBJ)
+hidamari: src/dev.o $(OBJ)
 	@echo "CC $@"
 	@$(CC) -o $@ $^ $(LDFLAGS)
 
-hidamari_d: $(OBJ_D)
+hidamari_d: src/dev.o $(OBJ_D)
 	@echo "CC $@"
 	@$(CC) -o $@ $^ $(LDFLAGS_D)
 

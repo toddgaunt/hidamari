@@ -7,7 +7,6 @@
 #include <stdbool.h>
 
 #include "type.h"
-#include "vga.h"
 #include "field.h"
 
 enum tile {
@@ -115,8 +114,7 @@ hidamari_init(struct hidamari *game);
 void
 hidamari_update(struct hidamari *game, enum button act);
 
-/* Render the current game-state to a buffer */
 void
-hidamari_render(struct vga *vp, struct hidamari *game);
+hidamari_print(struct hidamari *game);
 
 #endif

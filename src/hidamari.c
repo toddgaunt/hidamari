@@ -6,7 +6,6 @@
 #include <string.h>
 
 #include "hidamari.h"
-#include "vga.h"
 
 /*
  * Public API
@@ -45,26 +44,11 @@ hidamari_update(struct hidamari *game, enum button in)
 }
 
 void
-score_draw(struct vga *vp, int score, int scale, int x_offset, int y_offset)
+hidamari_print(struct hidamari *game)
 {
-	int x, y;
-	struct vga_rect r;
-	r.w = scale;
-	r.h = scale;
-	char score_str[20];
+	/* Score */
+	printf("%010d\n", game->field.score);
 
-	snprintf((char *)score_str, sizeof(score_str), "%010d", score);
-	for (x = 1; x < FIELD_WIDTH - 1; ++x) {
-		r.x = (x_offset + x) * scale;
-		r.y = (y_offset) * scale;
-		vga_fill_rect(vp, &r, 0xFF00FF);
-	}
-}
-
-void
-hidamari_render(struct vga *vp, struct hidamari *game)
-{
-	vga_fill(vp, 0x000000);
-	field_draw(vp, &game->field, 8, 0, 0);
-	score_draw(vp, game->field.score, 8, 0, FIELD_HEIGHT_VISIBLE);
+	/* Field */
+	field_print(&game->field);
 }

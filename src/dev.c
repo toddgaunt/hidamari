@@ -15,17 +15,14 @@
 int
 main()
 {
-	Button button = BTN_NONE;
+	enum button button = BTN_NONE;
 	struct hidamari game;
-
-	uint32_t *px = malloc(sizeof(*px) * SCRN_W * SCRN_H);
-	struct vga vga = vga_init(px, SCRN_W, SCRN_H);
 
 	srand(time(NULL));
 	hidamari_init(&game);
 	for (;;) {
 		hidamari_update(&game, BTN_NONE);
-		hidamari_render2(&vga, &game);
+		hidamari_print(&game);
 	}
 	return 0;
 }

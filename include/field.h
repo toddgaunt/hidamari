@@ -56,6 +56,9 @@ enum gamestate
 field_update(struct field *field, enum button in);
 
 void
-field_draw(struct vga *vp, struct field *fp, int scale, int x_offset, int y_offset);
+field_draw(struct vga *vp, struct vga_surface *sp, struct field *fp, int scale, int x_offset, int y_offset);
+
+void
+field_print(struct field *fp);
 
 #endif

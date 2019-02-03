@@ -38,8 +38,8 @@ main()
 	enum button in = BTN_NONE;
 	struct hidamari game;
 
-	uint32_t *px = malloc(sizeof(*px) * SCRN_W * SCRN_H);
-	struct vga vga = vga_init(px, SCRN_W, SCRN_H);
+	//uint32_t *px = malloc(sizeof(*px) * SCRN_W * SCRN_H);
+	//struct vga vga = vga_init(px, SCRN_W, SCRN_H);
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		return EXIT_FAILURE;
@@ -133,9 +133,9 @@ main()
 			acc -= dt;
 			in = BTN_NONE;
 		}
-		hidamari_render(&vga, &game);
-		SDL_UpdateTexture(texture, NULL, vga.px, vga.w * sizeof(*vga.px));
-		draw(renderer, texture);
+		//hidamari_render(&vga, &game);
+		//SDL_UpdateTexture(texture, NULL, vga.px, vga.w * sizeof(*vga.px));
+		//draw(renderer, texture);
 	}
 endgame:
 	SDL_DestroyWindow(screen);

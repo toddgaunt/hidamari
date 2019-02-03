@@ -13,7 +13,7 @@ struct vga {
 	uint32_t *px;
 };
 
-struct vga_texture {
+struct vga_surface {
 	int w;
 	int h;
 	uint32_t *px;
@@ -33,14 +33,17 @@ uint32_t
 vga_map_rgb(uint8_t r, uint8_t g, uint8_t b);
 
 void
+vga_load_image(struct vga_surface *sp);
+
+void
 vga_fill(struct vga *vp, uint32_t color);
 
 void
 vga_fill_rect(struct vga *vp, struct vga_rect *dst, uint32_t color);
 
 void
-vga_draw_rect(struct vga *vp,
-              struct vga_texture *tp,
+vga_copy_rect(struct vga *vp,
+              struct vga_surface *tp,
 	      struct vga_rect *src,
 	      struct vga_rect *dst);
 
