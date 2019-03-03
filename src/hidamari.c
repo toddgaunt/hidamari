@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ai.h"
 #include "hidamari.h"
 
 /*
@@ -14,31 +15,37 @@
 void
 hidamari_init(struct hidamari *game)
 {
-	static enum button const dbv = BTN_NONE;
+	static button const dbv = BTN_NONE;
 
 	memset(game, 0, sizeof(*game));
 	game->state = GAMESTATE_PLAYING;
-	//game->ai.region = region_create(ai_size_requirement());
+
 	game->ai.planstr = &dbv;
-	game->ai.active = false;
+	game->ai.active = true;
+    game->ai.region = malloc(ai_size() * 2);
+
 	field_init(&game->field);
 }
 
 void
-hidamari_update(struct hidamari *game, enum button in)
+hidamari_update(struct hidamari *game, button in)
 {
-	//double weight[3] = {0.848058, 2.304684, 1.405450};
+	double weight[3] = {0.848058, 2.304684, 1.405450};
 
 	switch(game->state) {
 	case GAMESTATE_INIT:
 		hidamari_init(game);
 		break;
 	case GAMESTATE_PLAYING:
-		game->state = field_update(&game->field, in);
+        if (!*game->ai.planstr)
+            game->ai.planstr = ai_plan(game->ai.region, weight, &game->field);
+        if (false == field_update(&game->field, game->ai.planstr[0]))
+            game->state = GAMESTATE_OVER;
+        ++game->ai.planstr;
 		break;
 	case GAMESTATE_OVER:
-		game->state = GAMESTATE_PLAYING;
 		field_init(&game->field);
+		game->state = GAMESTATE_PLAYING;
 		break;
 	}
 }
@@ -51,4 +58,10 @@ hidamari_print(struct hidamari *game)
 
 	/* Field */
 	field_print(&game->field);
+}
+
+void
+hidamari_render(struct vga *vga, struct hidamari *game)
+{
+    field_draw(vga, NULL, &game->field, 1, 0, 0);
 }

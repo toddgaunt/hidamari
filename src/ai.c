@@ -13,7 +13,7 @@
 struct field_node {
 	size_t g;
 	size_t n_action;
-	enum button *action;
+	button *action;
 	struct field field;
 	struct field_node *parent;
 	struct field_node *next;
@@ -45,7 +45,7 @@ mknode(void **region, struct field const *init)
  */
 void
 derive(void **region, struct field_node **stackp, struct field_node *parent,
-		size_t n_action, enum button *action)
+		size_t n_action, button *action)
 {
 	size_t i;
 	struct field_node *child = mknode(region, &parent->field);
@@ -63,21 +63,20 @@ derive(void **region, struct field_node **stackp, struct field_node *parent,
 
 /* Expands a fieldnode by branching out on all possible permutations of the
  * current falling piece.
- *
- * Returns 0 if successful, or -1 if it runs out of memory.
  */
 void
 expand(void **region, struct field_node **stackp, struct field_node *parent)
 {
 	size_t i, j;
-	enum button *tmp;
+	button *tmp;
 
 	for (i = 0; i < 3; ++i) {
 		for (j = 0; j < 6; ++j) {
 			tmp = balloc(region, i + j + 1);
 			memset(tmp, BTN_R, i);
-			memset(tmp + i, BTN_RIGHT, j);
+			memset(&tmp[i], BTN_RIGHT, j);
 			tmp[i + j] = BTN_B;
+            //printf("%lu\n", i + j + 1);
 			derive(region, stackp, parent, i + j + 1, tmp);
 			tmp = balloc(region, i + j + 1);
 			memset(tmp, BTN_R, i);
@@ -164,12 +163,9 @@ eval(struct field *field, double weight[3])
 {
 	int score = 0;
 
-    if (!field)
-        return UINT32_MAX;
-
-	score += weight[0] * h1(field);
-	score += weight[1] * h2(field);
-	score += weight[2] * h3(field);
+    score += weight[0] * h1(field);
+    score += weight[1] * h2(field);
+    score += weight[2] * h3(field);
 	return score;
 }
 
@@ -183,10 +179,10 @@ eval(struct field *field, double weight[3])
  * and return a vector of actions that must be taken in order to achieve the
  * goal state from the initial state fed into the program.
  */
-static enum button *
+static button *
 mkplan(void **region, struct field_node *goal)
 {
-	enum button *planstr;
+	button *planstr;
 	struct field_node *at;
 	size_t n_move = 0;
 	size_t i;
@@ -215,21 +211,23 @@ ai_size()
 	return pow(36, DEPTH) * (sizeof(struct field_node) + 10);
 }
 
-enum button const *
+button const *
 ai_plan(void *region, double weight[3], struct field const *init) {
 	struct field_node *stack = NULL;
 	struct field_node *goal = NULL;
 	struct field_node *at = NULL;
 
 	stack = mknode(&region, init);
-	goal = NULL;
 	while (stack) {
 		at = stack;
 		stack = stack->next;
 		if (DEPTH == at->g) {
             /* Higher scores means worse fitness */
-			if (eval(&at->field, weight) <= eval(&goal->field, weight))
-				goal = at;
+            if (!goal) {
+                goal = at;
+            } else if (eval(&at->field, weight) < eval(&goal->field, weight)) {
+                goal = at;
+            }
 		} else {
 		    expand(&region, &stack, at);
 		}

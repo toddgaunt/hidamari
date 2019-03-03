@@ -1,6 +1,9 @@
 /* See LICENSE file for copyright and license details */
-#ifndef FIELD_H
-#define FIELD_H
+#ifndef FIELD_H__
+#define FIELD_H__
+
+#include <stdlib.h>
+#include <stdbool.h>
 
 #include "button.h"
 #include "gamestate.h"
@@ -53,12 +56,14 @@ struct field {
 void
 field_init(struct field *field);
 
-enum gamestate
-field_update(struct field *field, enum button in);
+bool
+field_update(struct field *field, button in);
 
 void
-field_draw(struct vga *vp, struct vga_surface *sp, struct field *field,
-        int scale, int x_offset, int y_offset);
+field_draw(struct vga *vp,
+           struct vga_surface *sp,
+           struct field *field,
+           int scale, int x_offset, int y_offset);
 
 void
 field_print(struct field *field);

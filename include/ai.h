@@ -27,7 +27,7 @@ ai_size();
  * Return: An array of button inputs devised by the AI in order to achieve
  *	at a desirable state.
  */
-enum button const *
+button const *
 ai_plan(void *region, double weight[3], struct field const *init);
 
 #endif

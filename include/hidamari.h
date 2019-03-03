@@ -89,7 +89,7 @@ enum tile {
 struct ai_state {
 	bool active;
 	void *region;
-	enum button const *planstr;
+	button const *planstr;
 	u8 skill;
 };
 
@@ -112,7 +112,10 @@ hidamari_init(struct hidamari *game);
  * This is the only function needed to run the game after initialization.
  */
 void
-hidamari_update(struct hidamari *game, enum button act);
+hidamari_update(struct hidamari *game, button act);
+
+void
+hidamari_render(struct vga *vga, struct hidamari *game);
 
 void
 hidamari_print(struct hidamari *game);

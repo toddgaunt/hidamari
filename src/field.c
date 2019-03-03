@@ -373,8 +373,8 @@ field_init(struct field *field)
 	}
 }
 
-enum gamestate
-field_update(struct field *field, enum button in)
+bool
+field_update(struct field *field, button in)
 {
 	struct piece tmp;
 
@@ -425,20 +425,20 @@ field_update(struct field *field, enum button in)
 			get_next_hidamari(field);
 			field->slide_timer = 0;
 			if (is_game_over(field))
-				return GAMESTATE_OVER;
+				return 0;
 		}
 	}
-	return GAMESTATE_PLAYING;
+	return 1;
 }
 
 void
-field_print(struct field *fp)
+field_print(struct field *field)
 {
 	int i, j;
 
 	for (j = 0; j < FIELD_HEIGHT_VISIBLE; ++j) {
 		for (i = 0; i < FIELD_WIDTH_VISIBLE; ++i) {
-			if (BB_GET(fp->bitboard, i, FIELD_HEIGHT_VISIBLE - 1 - j)) {
+			if (BB_GET(field->bitboard, i, FIELD_HEIGHT_VISIBLE - 1 - j)) {
 				printf("##");
 			} else {
 				printf("  ");
@@ -446,4 +446,12 @@ field_print(struct field *fp)
 		}
 		printf("\n");
 	}
+}
+
+void
+field_draw(struct vga *vp,
+           struct vga_surface *sp,
+           struct field *field,
+           int scale, int x_offset, int y_offset)
+{
 }

@@ -30,12 +30,11 @@ main()
 	uint32_t last;
 	uint32_t now;
 	uint32_t frame_time;
-
 	SDL_Window *screen;
 	SDL_Event event;
-
 	enum button in = BTN_NONE;
 	struct hidamari game;
+    struct vga vga;
 
 	//uint32_t *px = malloc(sizeof(*px) * SCRN_W * SCRN_H);
 	//struct vga vga = vga_init(px, SCRN_W, SCRN_H);
@@ -62,7 +61,7 @@ main()
 	SDL_RenderSetLogicalSize(renderer, SCRN_W, SCRN_H);
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
 	
-	SDL_Texture * texture = SDL_CreateTexture(renderer,
+	SDL_Texture *texture = SDL_CreateTexture(renderer,
 	SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, SCRN_W, SCRN_H);
 
 	srand(time(NULL));
@@ -132,9 +131,9 @@ main()
 			acc -= dt;
 			in = BTN_NONE;
 		}
-		//hidamari_render(&vga, &game);
-		//SDL_UpdateTexture(texture, NULL, vga.px, vga.w * sizeof(*vga.px));
-		//draw(renderer, texture);
+		hidamari_render(&vga, &game);
+		SDL_UpdateTexture(texture, NULL, vga.px, vga.w * sizeof(*vga.px));
+		draw(renderer, texture);
 	}
 endgame:
 	SDL_DestroyWindow(screen);
@@ -142,9 +141,9 @@ endgame:
 }
 
 
-	/* Loads the texture map for the game */
-	//SDL_Surface *tileset_sf = IMG_Load("res/tileset/8px.png");
-	//SDL_Texture *tileset_hw = SDL_CreateTextureFromSurface(renderer, tileset_sf);
+/* Loads the texture map for the game */
+//SDL_Surface *tileset_sf = IMG_Load("res/tileset/8px.png");
+//SDL_Texture *tileset_hw = SDL_CreateTextureFromSurface(renderer, tileset_sf);
 
-	//SDL_Texture *texture = SDL_CreateTexture(renderer,
-	//SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, SCRN_W, SCRN_H);
+//SDL_Texture *texture = SDL_CreateTexture(renderer,
+//SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, SCRN_W, SCRN_H);

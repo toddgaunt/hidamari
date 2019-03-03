@@ -2,7 +2,11 @@
 #ifndef BUTTON_H
 #define BUTTON_H
 
-enum button {
+#include <stdint.h>
+
+typedef uint8_t button;
+
+enum {
 	BTN_NONE = 0,
 	/* D-pad */
 	BTN_UP,

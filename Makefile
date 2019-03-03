@@ -3,7 +3,7 @@
 # Project configuration
 include config.mk
 
-SRC := hidamari.c field.c
+SRC := hidamari.c field.c vga.c ai.c
 
 OBJ := $(patsubst %.c, src/%.o, $(filter %.c, $(SRC)))
 
