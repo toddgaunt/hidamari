@@ -10,19 +10,9 @@ enum {
 	AI_THREAD_TERMINATE,
 };
 
-typedef struct FieldNode FieldNode;
-struct FieldNode {
-	size_t g;
-	size_t n_action;
-	enum button *action;
-	struct field field;
-	FieldNode *parent;
-	FieldNode *next;
-};
-
 /* Compute the minimum size of the region needed by ai_plan() */
 size_t
-ai_size_requirement();
+ai_size();
 
 /* Perform a depth-first search on the state-space of tetris until exhaustion.
  * Each state that reaches the depth bound of DEPTH is evaluated, and compared

@@ -9,9 +9,7 @@ MANPREFIX := $(PREFIX)/man
 
 # Linking flags
 LDFLAGS := -lSDL2 -lSDL2_image -lpthread -lm
-LDFLAGS_D := $(LDFLAGS) #-pg
 
 # C Compiler settings
-CC := cc
+CC := clang
 CFLAGS := -O2 -Iinclude -std=c11 -pedantic -Wall -Wextra
-CFLAGS_D := $(CFLAGS) -O0 -g -DDEBUG

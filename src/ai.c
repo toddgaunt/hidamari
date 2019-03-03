@@ -1,30 +1,40 @@
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 	
 #include "ai.h"
-#include "hidamari.h"
-#include "region.h"
+#include "field.h"
 
 #define PLAN_DEPTH 1
 #define DEPTH 2
 
-void
-field_init(struct field *field);
+struct field_node {
+	size_t g;
+	size_t n_action;
+	enum button *action;
+	struct field field;
+	struct field_node *parent;
+	struct field_node *next;
+};
 
-int
-field_update(struct field *field, enum button act);
+/* Allocate _size_ bytes from a buffer, and shift the buffer over */
+static void *
+balloc(void **buffer, size_t size)
+{
+	void *mem = *buffer;
+	*(uint8_t **)buffer += size;
+	return mem;
+}
 
 /* Allocate a new node with a copy of _init_ as its state */
-FieldNode *
-create_node(void *region, struct field const *init)
+struct field_node *
+mknode(void **region, struct field const *init)
 {
-	FieldNode *ret;
+	struct field_node *ret;
 
-	ret = region_alloc(region, sizeof(*ret));
-	if (!ret)
-		return NULL;
+	ret = balloc(region, sizeof(*ret));
 	memset(ret, 0, sizeof(*ret));
 	memcpy(&ret->field, init, sizeof(struct field));
 	return ret;
@@ -33,15 +43,13 @@ create_node(void *region, struct field const *init)
 /* Derive a new state node from a parent node. The child will reflect
  * the state of the parent after taking _n_action_ actions.
  */
-int
-derive(void *region, FieldNode **stackp, FieldNode *parent,
+void
+derive(void **region, struct field_node **stackp, struct field_node *parent,
 		size_t n_action, enum button *action)
 {
 	size_t i;
-	FieldNode *child = create_node(region, &parent->field);
+	struct field_node *child = mknode(region, &parent->field);
 
-	if (!child)
-		return -1;
 	child->n_action = n_action;
 	child->action = action;
 	child->parent = parent;
@@ -51,42 +59,34 @@ derive(void *region, FieldNode **stackp, FieldNode *parent,
 	}
 	child->next = *stackp;
 	*stackp = child;
-	return 0;
 }
 
 /* Expands a fieldnode by branching out on all possible permutations of the
- * current hidamari.
+ * current falling piece.
  *
  * Returns 0 if successful, or -1 if it runs out of memory.
  */
-int
-expand(void *region, FieldNode **stackp, FieldNode *parent)
+void
+expand(void **region, struct field_node **stackp, struct field_node *parent)
 {
 	size_t i, j;
 	enum button *tmp;
 
 	for (i = 0; i < 3; ++i) {
 		for (j = 0; j < 6; ++j) {
-			tmp = region_alloc(region, i + j + 1);
+			tmp = balloc(region, i + j + 1);
 			memset(tmp, BTN_R, i);
 			memset(tmp + i, BTN_RIGHT, j);
 			tmp[i + j] = BTN_B;
-			if (0 > derive(region, stackp, parent, i + j + 1, tmp))
-				return -1;
-			tmp = region_alloc(region, i + j + 1);
+			derive(region, stackp, parent, i + j + 1, tmp);
+			tmp = balloc(region, i + j + 1);
 			memset(tmp, BTN_R, i);
 			memset(tmp + i, BTN_LEFT, j);
 			tmp[i + j] = BTN_B;
-			if (0 > derive(region, stackp, parent, i + j + 1, tmp))
-				return -1;
+			derive(region, stackp, parent, i + j + 1, tmp);
 		}
 	}
-	return 0;
 }
-
-/* ---
- * Heuristics to evaluate how good a state is.
- */
 
 /* Heuristic 1: Calculate the aggregate difference in height between all
  * columns.
@@ -99,8 +99,8 @@ h1(struct field *field)
 	int score = 0;
 	int heights[FIELD_WIDTH];
 
-	for (i = 0; i < HIDAMARI_WIDTH - 1; ++i) {
-		for (j = 0; j < HIDAMARI_HEIGHT; ++j) {
+	for (i = 0; i < FIELD_WIDTH - 1; ++i) {
+		for (j = 0; j < FIELD_HEIGHT; ++j) {
 			if ((field->bitboard[j] & (2 << i)) == (2 << i)) {
 				top = j;
 			}
@@ -121,8 +121,8 @@ h2(struct field *field)
 	size_t i, j;
 	int score = 0;
 
-	for (i = 2; i < (1 << (HIDAMARI_WIDTH - 1)); i <<= 1) {
-		for (j = 0; j < HIDAMARI_HEIGHT; ++j) {
+	for (i = 2; i < (1 << (FIELD_WIDTH - 1)); i <<= 1) {
+		for (j = 0; j < FIELD_HEIGHT; ++j) {
 			if ((field->bitboard[j] & i) == i) {
 				top = j;
 			}
@@ -142,9 +142,9 @@ h3(struct field *field)
 	size_t i, j;
 	int score = 0;
 
-	for (i = 0; i < HIDAMARI_WIDTH - 1; ++i) {
+	for (i = 0; i < FIELD_WIDTH - 1; ++i) {
 		cnt = 0;
-		for (j = 0; j < HIDAMARI_HEIGHT; ++j) {
+		for (j = 0; j < FIELD_HEIGHT; ++j) {
 			if ((field->bitboard[j] & (2 << i)) == (2 << i)) {
 				score += cnt;
 				cnt = 0;
@@ -159,10 +159,13 @@ h3(struct field *field)
 /* Main evaluation function for a given state. Each of the heuristics
  * is multiplied by a certain weight depending on how valuable it is deemed.
  */
-static int
-evaluate(struct field *field, double weight[3])
+static uint32_t
+eval(struct field *field, double weight[3])
 {
 	int score = 0;
+
+    if (!field)
+        return UINT32_MAX;
 
 	score += weight[0] * h1(field);
 	score += weight[1] * h2(field);
@@ -176,15 +179,15 @@ evaluate(struct field *field, double weight[3])
  *
  */
 
-/* Given a FieldNode, trace back up the tree it was created from to allocate
+/* Given a struct field_node, trace back up the tree it was created from to allocate
  * and return a vector of actions that must be taken in order to achieve the
  * goal state from the initial state fed into the program.
  */
 static enum button *
-mkplan(void *region, FieldNode *goal)
+mkplan(void **region, struct field_node *goal)
 {
 	enum button *planstr;
-	FieldNode *fp;
+	struct field_node *at;
 	size_t n_move = 0;
 	size_t i;
 
@@ -192,51 +195,44 @@ mkplan(void *region, FieldNode *goal)
 	for (i = 0; i < DEPTH - PLAN_DEPTH; ++i) {
 		goal = goal->parent;
 	}
-	for (fp = goal; fp->parent; fp = fp->parent) {
-		n_move += fp->n_action;
+	for (at = goal; at->parent; at = at->parent) {
+		n_move += at->n_action;
 	}
-	planstr = region_alloc(region, n_move + 1);
+	planstr = balloc(region, n_move + 1);
 	planstr[n_move--] = BTN_NONE;
-	for (fp = goal; fp; fp = fp->parent) {
-		for (i = 0; i < fp->n_action; ++i) {
-			planstr[n_move - i] = fp->action[fp->n_action - i - 1];
+	for (at = goal; at; at = at->parent) {
+		for (i = 0; i < at->n_action; ++i) {
+			planstr[n_move - i] = at->action[at->n_action - i - 1];
 		}
-		n_move -= fp->n_action;
+		n_move -= at->n_action;
 	}
 	return planstr;
 }
 
 size_t
-ai_size_requirement()
+ai_size()
 {
-	return pow(36, DEPTH) * (sizeof(FieldNode) + 10);
+	return pow(36, DEPTH) * (sizeof(struct field_node) + 10);
 }
 
 enum button const *
 ai_plan(void *region, double weight[3], struct field const *init) {
-	FieldNode *stack;
-	FieldNode *goal;
-	FieldNode *fp;
+	struct field_node *stack = NULL;
+	struct field_node *goal = NULL;
+	struct field_node *at = NULL;
 
-	stack = create_node(region, init);
+	stack = mknode(&region, init);
 	goal = NULL;
 	while (stack) {
-		fp = stack;
+		at = stack;
 		stack = stack->next;
-		if (DEPTH == fp->g) {
-			/* Evaluate the current goal state for "goodness" */
-			if (!goal) {
-				goal = fp;
-			} else if (evaluate(&fp->field, weight)
-			         < evaluate(&goal->field, weight)) {
-				goal = fp;
-			}
+		if (DEPTH == at->g) {
+            /* Higher scores means worse fitness */
+			if (eval(&at->field, weight) <= eval(&goal->field, weight))
+				goal = at;
 		} else {
-			if (0 > expand(region, &stack, fp)) {
-				fprintf(stderr, "error: Ran out of memory during AI planning %zu\n", *(size_t *)region);
-				exit(1);
-			}
+		    expand(&region, &stack, at);
 		}
 	}
-	return mkplan(region, goal);
+	return mkplan(&region, goal);
 }

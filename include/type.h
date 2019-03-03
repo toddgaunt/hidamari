@@ -4,11 +4,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-/* Documentation types. */
-typedef uint8_t u1;
-typedef uint8_t u4;
-typedef uint16_t u12;
-
 /* Core types */
 typedef int8_t i8;
 typedef int16_t i16;

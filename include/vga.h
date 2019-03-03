@@ -42,9 +42,9 @@ void
 vga_fill_rect(struct vga *vp, struct vga_rect *dst, uint32_t color);
 
 void
-vga_copy_rect(struct vga *vp,
-              struct vga_surface *tp,
-	      struct vga_rect *src,
-	      struct vga_rect *dst);
+vga_copy_rect(struct vga *vga,
+              struct vga_surface *surface,
+              struct vga_rect *src,
+              struct vga_rect *dst);
 
 #endif

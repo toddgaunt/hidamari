@@ -26,21 +26,9 @@ r7system(enum shape bag[7]);
 
 /* Gravity of the falling piece at certain levels */
 static f32 gravity_level[15] = {
-	0.01667,
-	0.021017,
-	0.026977,
-	0.035256,
-	0.04693,
-	0.06361,
-	0.0879,
-	0.1236,
-	0.1775,
-	0.2598,
-	0.388,
-	0.59,
-	0.92,
-	1.46,
-	2.36
+	0.016670, 0.021017, 0.026977, 0.035256, 0.046930,
+    0.063610, 0.087900, 0.123600, 0.177500, 0.259800,
+    0.388000, 0.590000, 0.920000, 1.460000, 2.300006
 };
 
 /* The different orientations of each hidamari. Note that for these
@@ -276,7 +264,7 @@ get_next_hidamari(struct field *field)
 
 /* Check if the Hidamari would collide in the given bitboard, at the given x,y coordinates */
 static bool
-is_collision(u12 const bitboard[FIELD_HEIGHT], struct piece const *t)
+is_collision(u16 const bitboard[FIELD_HEIGHT], struct piece const *t)
 {
 	int i;
 	int x, y;

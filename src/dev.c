@@ -23,6 +23,7 @@ main()
 	for (;;) {
 		hidamari_update(&game, BTN_NONE);
 		hidamari_print(&game);
+        usleep(100);
 	}
 	return 0;
 }

@@ -9,7 +9,6 @@
 #include <unistd.h>
 
 #include "hidamari.h"
-#include "vga.h"
 
 #define SCRN_W 256
 #define SCRN_H 192
