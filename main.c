@@ -15,7 +15,7 @@
 int
 main()
 {
-	enum button button = BTN_NONE;
+	button bt = BTN_NONE;
 	struct hidamari game;
 
 	srand(time(NULL));

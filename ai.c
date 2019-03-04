@@ -1,3 +1,4 @@
+/* See LICENSE file for copyright and license details */
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -10,13 +11,13 @@
 #define PLAN_DEPTH 1
 #define DEPTH 2
 
-struct field_node {
+struct state {
 	size_t g;
 	size_t n_action;
 	button *action;
 	struct field field;
-	struct field_node *parent;
-	struct field_node *next;
+	struct state *parent;
+	struct state *next;
 };
 
 /* Allocate _size_ bytes from a buffer, and shift the buffer over */
@@ -24,18 +25,18 @@ static void *
 balloc(void **buffer, size_t size)
 {
 	void *mem = *buffer;
+    memset(mem, 0, size);
 	*(uint8_t **)buffer += size;
 	return mem;
 }
 
 /* Allocate a new node with a copy of _init_ as its state */
-struct field_node *
+struct state *
 mknode(void **region, struct field const *init)
 {
-	struct field_node *ret;
+	struct state *ret;
 
 	ret = balloc(region, sizeof(*ret));
-	memset(ret, 0, sizeof(*ret));
 	memcpy(&ret->field, init, sizeof(struct field));
 	return ret;
 }
@@ -44,11 +45,11 @@ mknode(void **region, struct field const *init)
  * the state of the parent after taking _n_action_ actions.
  */
 void
-derive(void **region, struct field_node **stackp, struct field_node *parent,
+derive(void **region, struct state **stackp, struct state *parent,
 		size_t n_action, button *action)
 {
 	size_t i;
-	struct field_node *child = mknode(region, &parent->field);
+	struct state *child = mknode(region, &parent->field);
 
 	child->n_action = n_action;
 	child->action = action;
@@ -65,7 +66,7 @@ derive(void **region, struct field_node **stackp, struct field_node *parent,
  * current falling piece.
  */
 void
-expand(void **region, struct field_node **stackp, struct field_node *parent)
+expand(void **region, struct state **stackp, struct state *parent)
 {
 	size_t i, j;
 	button *tmp;
@@ -76,7 +77,6 @@ expand(void **region, struct field_node **stackp, struct field_node *parent)
 			memset(tmp, BTN_R, i);
 			memset(&tmp[i], BTN_RIGHT, j);
 			tmp[i + j] = BTN_B;
-            //printf("%lu\n", i + j + 1);
 			derive(region, stackp, parent, i + j + 1, tmp);
 			tmp = balloc(region, i + j + 1);
 			memset(tmp, BTN_R, i);
@@ -93,10 +93,10 @@ expand(void **region, struct field_node **stackp, struct field_node *parent)
 static int
 h1(struct field *field)
 {
-	int top;
 	size_t i, j;
-	int score = 0;
+	int top;
 	int heights[FIELD_WIDTH];
+	int score = 0;
 
 	for (i = 0; i < FIELD_WIDTH - 1; ++i) {
 		for (j = 0; j < FIELD_HEIGHT; ++j) {
@@ -106,9 +106,11 @@ h1(struct field *field)
 		}
 		heights[i] = top;
 	}
+
 	for (i = 0; i < 9; ++i) {
 		score += abs(heights[i] - heights[i + 1]);
 	}
+
 	return score;
 }
 
@@ -116,8 +118,8 @@ h1(struct field *field)
 static int
 h2(struct field *field)
 {
-	int top;
 	size_t i, j;
+	int top;
 	int score = 0;
 
 	for (i = 2; i < (1 << (FIELD_WIDTH - 1)); i <<= 1) {
@@ -128,6 +130,7 @@ h2(struct field *field)
 		}
 		score += top;
 	}
+
 	return score;
 }
 
@@ -137,8 +140,8 @@ h2(struct field *field)
 static int
 h3(struct field *field)
 {
-	int cnt;
 	size_t i, j;
+	int cnt;
 	int score = 0;
 
 	for (i = 0; i < FIELD_WIDTH - 1; ++i) {
@@ -152,6 +155,7 @@ h3(struct field *field)
 			}
 		}
 	}
+
 	return score;
 }
 
@@ -159,13 +163,16 @@ h3(struct field *field)
  * is multiplied by a certain weight depending on how valuable it is deemed.
  */
 static uint32_t
-eval(struct field *field, double weight[3])
+eval(struct state *state, double weight[3])
 {
 	int score = 0;
 
-    score += weight[0] * h1(field);
-    score += weight[1] * h2(field);
-    score += weight[2] * h3(field);
+    if (!state)
+        return UINT32_MAX;
+
+    score += weight[0] * h1(&state->field);
+    score += weight[1] * h2(&state->field);
+    score += weight[2] * h3(&state->field);
 	return score;
 }
 
@@ -175,15 +182,15 @@ eval(struct field *field, double weight[3])
  *
  */
 
-/* Given a struct field_node, trace back up the tree it was created from to allocate
+/* Given a struct state, trace back up the tree it was created from to allocate
  * and return a vector of actions that must be taken in order to achieve the
  * goal state from the initial state fed into the program.
  */
 static button *
-mkplan(void **region, struct field_node *goal)
+mkplan(void **region, struct state *goal)
 {
 	button *planstr;
-	struct field_node *at;
+	struct state *at;
 	size_t n_move = 0;
 	size_t i;
 
@@ -208,26 +215,22 @@ mkplan(void **region, struct field_node *goal)
 size_t
 ai_size()
 {
-	return pow(36, DEPTH) * (sizeof(struct field_node) + 10);
+	return pow(36, DEPTH) * (sizeof(struct state) + 10);
 }
 
 button const *
 ai_plan(void *region, double weight[3], struct field const *init) {
-	struct field_node *stack = NULL;
-	struct field_node *goal = NULL;
-	struct field_node *at = NULL;
+	struct state *stack = NULL;
+	struct state *goal = NULL;
+	struct state *at = NULL;
 
 	stack = mknode(&region, init);
 	while (stack) {
 		at = stack;
 		stack = stack->next;
 		if (DEPTH == at->g) {
-            /* Higher scores means worse fitness */
-            if (!goal) {
+            if (eval(at, weight) < eval(goal, weight))
                 goal = at;
-            } else if (eval(&at->field, weight) < eval(&goal->field, weight)) {
-                goal = at;
-            }
 		} else {
 		    expand(&region, &stack, at);
 		}

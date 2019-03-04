@@ -3,9 +3,9 @@
 # Project configuration
 include config.mk
 
-SRC := hidamari.c field.c vga.c ai.c
+SRC := hidamari.c field.c ai.c
 
-OBJ := $(patsubst %.c, src/%.o, $(filter %.c, $(SRC)))
+OBJ := $(patsubst %.c, %.o, $(filter %.c, $(SRC)))
 
 # Standard targets
 all: hidamari
@@ -29,7 +29,7 @@ clean:
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
 # Targets
-hidamari: src/dev.o $(OBJ)
+hidamari: main.o $(OBJ)
 	@echo "CC $@"
 	@$(CC) -o $@ $^ $(LDFLAGS)
 
