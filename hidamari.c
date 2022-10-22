@@ -182,15 +182,15 @@ static Vec2 const hidamari_orientation[HIDAMARI_LAST][4][4] = {
 };
 
 static inline void
-buf_set(HidamariBuffer *buf, size_t x, size_t y, HidamariTile tile, u8 const color[3])
+buf_set(HidamariBuffer *buf, size_t x, size_t y, HidamariTile tile, u8 const color[3], bool highlight)
 {
 	buf->tile[x][y] = tile;
-	buf->color[x][y][0] = color[0];
-	buf->color[x][y][1] = color[1];
-	buf->color[x][y][2] = color[2];
-	buf->highlight[x][y] = false;
-	buf->highlight[x][y] = false;
-	buf->highlight[x][y] = false;
+	if (color != NULL) {
+		buf->color[x][y][0] = color[0];
+		buf->color[x][y][1] = color[1];
+		buf->color[x][y][2] = color[2];
+	}
+	buf->highlight[x][y] = highlight;
 }
 
 static inline void
@@ -199,11 +199,7 @@ buf_write_cstr(HidamariBuffer *buf, size_t x, size_t y, bool highlight, char con
 	size_t i;
 
 	for (i = 0; i < strlen(str); ++i) {
-		buf->tile[x + i][y] = str[i] - ASCII_OFFSET;
-	}
-
-	for (i = 0; i < strlen(str); ++i) {
-		buf->highlight[x + i][y] = highlight;
+		buf_set(buf, x+i, y, str[i] - ASCII_OFFSET, NULL, highlight);
 	}
 }
 
@@ -216,12 +212,12 @@ draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, HidamariPlayFi
 
 	/* Draw the borders */
 	for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
-		buf->tile[x_offset][y_offset + y] = HIDAMARI_TILE_WALL;
-		buf->tile[x_offset + HIDAMARI_WIDTH - 1][y_offset + y] = HIDAMARI_TILE_WALL;
+		buf_set(buf, x_offset, y_offset + y, HIDAMARI_TILE_WALL, NULL, false);
+		buf_set(buf, x_offset + HIDAMARI_WIDTH - 1, y_offset + y, HIDAMARI_TILE_WALL, NULL, false);
 	}
 
 	for (x = 1; x < HIDAMARI_BUFFER_WIDTH - 1; ++x) {
-		buf->tile[x_offset + x][y_offset] = HIDAMARI_TILE_WALL;
+		buf_set(buf, x_offset + x, y_offset, HIDAMARI_TILE_WALL, NULL, false);
 	}
 
 	/* Draw the next piece prievew area */
@@ -229,9 +225,9 @@ draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, HidamariPlayFi
 		for (y = HIDAMARI_HEIGHT_VISIBLE + 3; y < HIDAMARI_HEIGHT_VISIBLE + 6; ++y) {
 			if (HIDAMARI_HEIGHT_VISIBLE + 4 == y
 			|| HIDAMARI_HEIGHT_VISIBLE + 3 == y) {
-				buf->tile[x_offset + x][y_offset + y] = HIDAMARI_TILE_SPACE;
+				buf_set(buf, x_offset + x, y_offset + y, HIDAMARI_TILE_SPACE, NULL, false);
 			} else {
-				buf->tile[x_offset + x][y_offset + y] = HIDAMARI_TILE_WALL;
+				buf_set(buf, x_offset + x, y_offset + y, HIDAMARI_TILE_WALL, NULL, false);
 			}
 		}
 	}
@@ -251,7 +247,7 @@ draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, HidamariPlayFi
 			++y;
 		/* if (y >= HIDAMARI_HEIGHT_VISIBLE + 4) */
 		/* 	continue; */
-		buf->tile[x][y] = HIDAMARI_TILE_SPACE + 1 + field->next;
+		buf_set(buf, x, y, HIDAMARI_TILE_SPACE + 1 + field->next, NULL, false);
 	}
 
 	/* Draw the scoreboard */
@@ -259,9 +255,9 @@ draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, HidamariPlayFi
 	for (x = 1; x < HIDAMARI_WIDTH_VISIBLE - 1; ++x) {
 		for (y = HIDAMARI_HEIGHT_VISIBLE; y < HIDAMARI_HEIGHT_VISIBLE + 3; ++y) {
 			if (HIDAMARI_HEIGHT_VISIBLE + 1 == y) {
-				buf_set(buf, x_offset + x, y_offset + y, score[x - 1] - 48, (u8[]){0, 0 ,0});
+				buf_set(buf, x_offset + x, y_offset + y, score[x - 1] - 48, NULL, false);
 			} else {
-				buf->tile[x_offset + x][y_offset + y] = HIDAMARI_TILE_WALL;
+				buf_set(buf, x_offset + x, y_offset + y, HIDAMARI_TILE_WALL, NULL, false);
 			}
 		}
 	}
@@ -269,9 +265,9 @@ draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, HidamariPlayFi
 	for (x = 1; x < HIDAMARI_WIDTH_VISIBLE - 1; ++x) {
 		for (y = y_offset + 1; y < y_offset + HIDAMARI_HEIGHT_VISIBLE; ++y) {
 			if (field->grid[y] & 1 << x) {
-				buf->tile[x_offset + x][y_offset +y] = HIDAMARI_TILE_FALLEN;
+				buf_set(buf, x_offset + x, y_offset +y, HIDAMARI_TILE_FALLEN, NULL, false);
 			} else {
-				buf->tile[x_offset + x][y_offset + y] = HIDAMARI_TILE_SPACE;
+				buf_set(buf, x_offset + x, y_offset + y, HIDAMARI_TILE_SPACE, NULL, false);
 			}
 		}
 	}
@@ -286,7 +282,7 @@ draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, HidamariPlayFi
 		                              [i].y;
 		if (y >= HIDAMARI_HEIGHT_VISIBLE)
 			continue;
-		buf->tile[x][y] = HIDAMARI_TILE_SPACE + 1 + field->current.shape;
+		buf_set(buf, x, y, HIDAMARI_TILE_SPACE + 1 + field->current.shape, NULL, false);
 	}
 }
 
@@ -306,12 +302,12 @@ draw_main_menu(HidamariBuffer *buf, HidamariGame *game)
 	/* Draw the backdrop */
 	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
 		for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
-			buf->tile[x][y] = HIDAMARI_TILE_WALL;
+			buf_set(buf, x, y, HIDAMARI_TILE_WALL, NULL, false);
 		}
 	}
 	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
 		for (y = HIDAMARI_BUFFER_HEIGHT - 4; y < HIDAMARI_BUFFER_HEIGHT - 1; ++y) {
-			buf_set(buf, x, y, HIDAMARI_TILE_SPACE, color);
+			buf_set(buf, x, y, HIDAMARI_TILE_SPACE, color, false);
 		}
 	}
 
@@ -331,12 +327,12 @@ draw_option_menu(HidamariBuffer *buf, HidamariGame *game)
 	/* Draw the backdrop */
 	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
 		for (y = 0; y < HIDAMARI_BUFFER_HEIGHT; ++y) {
-			buf->tile[x][y] = HIDAMARI_TILE_WALL;
+			buf_set(buf, x, y, HIDAMARI_TILE_WALL, NULL, false);
 		}
 	}
 	for (x = 0; x < HIDAMARI_BUFFER_WIDTH; ++x) {
 		for (y = HIDAMARI_BUFFER_HEIGHT - 4; y < HIDAMARI_BUFFER_HEIGHT - 1; ++y) {
-			buf->tile[x][y] = HIDAMARI_TILE_SPACE;
+			buf_set(buf, x, y, HIDAMARI_TILE_SPACE, NULL, false);
 		}
 	}
 	buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 3, false, "OPTION");
