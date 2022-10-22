@@ -26,10 +26,19 @@ render(SDL_Renderer *renderer, SDL_Texture *texture, HidamariBuffer *buf)
 	/* Render the static grid */
 	for (i = 0; i < HIDAMARI_BUFFER_WIDTH; ++i) {
 		for (j = 0; j < HIDAMARI_BUFFER_HEIGHT; ++j) {
-			tile = buf->tile[HIDAMARI_BUFFER_WIDTH - 1 - i]
-				[HIDAMARI_BUFFER_HEIGHT - 1 -j];
+
+			// Set hihglighting
+			if (buf->highlight[HIDAMARI_BUFFER_WIDTH - 1 - i][HIDAMARI_BUFFER_HEIGHT - 1 - j] == true) {
+				SDL_SetTextureColorMod(texture, 100, 100, 100);
+			} else {
+				SDL_SetTextureColorMod(texture, 255, 255, 255);
+			}
+
+			tile = buf->tile[HIDAMARI_BUFFER_WIDTH - 1 - i][HIDAMARI_BUFFER_HEIGHT - 1 -j];
+
 			if (HIDAMARI_TILE_SPACE == tile)
 				continue;
+
 			dest_r.x = TILE_S * (HIDAMARI_BUFFER_WIDTH - 1 - i);
 			dest_r.y = TILE_S * j;
 			src_r.x = TILE_S * (tile % 16);
@@ -142,6 +151,7 @@ main()
 			acc -= dt;
 			button = BUTTON_NONE;
 		}
+		// Sleep away some time to avoid wasting CPU cycles
 		usleep((dt - acc) * 1000);
 		render(renderer, tileset_hw, &game.buf);
 	}

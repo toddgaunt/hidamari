@@ -23,6 +23,8 @@
 #define HIDAMARI_MAIN_CURSOR 0
 #define HIDAMARI_OPTION_CURSOR 1
 
+#define ASCII_OFFSET (HIDAMARI_TILE_CHAR_A+1)
+
 typedef uint8_t Button;
 typedef uint8_t HidamariTile;
 typedef uint8_t HidamariShape;
@@ -115,13 +117,13 @@ enum {
 };
 
 enum {
-	HIDAMARI_I,        
-	HIDAMARI_J,        
-	HIDAMARI_L,        
-	HIDAMARI_O,        
-	HIDAMARI_S,        
-	HIDAMARI_T,        
-	HIDAMARI_Z,        
+	HIDAMARI_I,
+	HIDAMARI_J,
+	HIDAMARI_L,
+	HIDAMARI_O,
+	HIDAMARI_S,
+	HIDAMARI_T,
+	HIDAMARI_Z,
 	HIDAMARI_LAST, /* Not an actual piece, just used for enum length. Also
 			  can be used as a NULL value for hidamaris */
 };
@@ -139,11 +141,13 @@ enum {
 	HIDAMARI_AI_NORMAL,
 	HIDAMARI_AI_SKILLED,
 	HIDAMARI_AI_GODLIKE,
+	HIDAMARI_AI_LAST,
 };
 
 struct HidamariBuffer {
 	HidamariTile tile[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
 	u8 color[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT][3];
+	bool highlight[HIDAMARI_BUFFER_WIDTH][HIDAMARI_BUFFER_HEIGHT];
 };
 
 struct Hidamari {
@@ -155,10 +159,10 @@ struct Hidamari {
 struct HidamariPlayField {
 	/* Scoring */
 	u8 level;
-	u32 score; 
-	u32 lines; 
+	u32 score;
+	u32 lines;
 	/* Timing */
-	f32 gravity_timer; 
+	f32 gravity_timer;
 	u8 slide_timer : 4;
 	/* Randomization */
 	u4 bag_pos : 4; /* Current position in the bag */

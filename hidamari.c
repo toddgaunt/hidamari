@@ -42,7 +42,7 @@ static f32 gravity_level[15] = {
 };
 
 /* Character representations of each hidamari */
-static char const hidamari_shape_char[HIDAMARI_LAST] =
+char const hidamari_shape_char[HIDAMARI_LAST] =
 {
 	'I',
 	'J',
@@ -188,15 +188,22 @@ buf_set(HidamariBuffer *buf, size_t x, size_t y, HidamariTile tile, u8 const col
 	buf->color[x][y][0] = color[0];
 	buf->color[x][y][1] = color[1];
 	buf->color[x][y][2] = color[2];
+	buf->highlight[x][y] = false;
+	buf->highlight[x][y] = false;
+	buf->highlight[x][y] = false;
 }
 
 static inline void
-buf_write_cstr(HidamariBuffer *buf, size_t x, size_t y, char const *str)
+buf_write_cstr(HidamariBuffer *buf, size_t x, size_t y, bool highlight, char const *str)
 {
 	size_t i;
 
 	for (i = 0; i < strlen(str); ++i) {
-		buf->tile[x + i][y] = str[i] - 33;
+		buf->tile[x + i][y] = str[i] - ASCII_OFFSET;
+	}
+
+	for (i = 0; i < strlen(str); ++i) {
+		buf->highlight[x + i][y] = highlight;
 	}
 }
 
@@ -284,8 +291,15 @@ draw_field(HidamariBuffer *buf, size_t x_offset, size_t y_offset, HidamariPlayFi
 }
 
 static void
+draw_menu_item(HidamariBuffer *buf, size_t x, size_t y, int cursor, int position, char const *text) {
+	buf_write_cstr(buf, x, y, cursor == position, text);
+}
+
+static void
 draw_main_menu(HidamariBuffer *buf, HidamariGame *game)
 {
+	(void)game;
+
 	static u8 const color[] = {130, 130, 130};
 	size_t x, y;
 
@@ -300,16 +314,18 @@ draw_main_menu(HidamariBuffer *buf, HidamariGame *game)
 			buf_set(buf, x, y, HIDAMARI_TILE_SPACE, color);
 		}
 	}
-	buf_write_cstr(buf, 8, HIDAMARI_BUFFER_HEIGHT - 3, "HIDAMARI");
-	buf_write_cstr(buf, 10, HIDAMARI_BUFFER_HEIGHT - 7, "PLAY");
-	buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 9, "OPTION");
-	buf_write_cstr(buf, 10, HIDAMARI_BUFFER_HEIGHT - 11, "QUIT");
+
+	buf_write_cstr(buf, 8, HIDAMARI_BUFFER_HEIGHT - 3, false, "HIDAMARI");
+	draw_menu_item(buf, 10, HIDAMARI_BUFFER_HEIGHT - 7, game->cursor[0], 0, "PLAY");
+	draw_menu_item(buf, 9, HIDAMARI_BUFFER_HEIGHT - 9, game->cursor[0], 1, "OPTION");
+	draw_menu_item(buf, 10, HIDAMARI_BUFFER_HEIGHT - 11, game->cursor[0], 2, "QUIT");
 }
 
 static void
 draw_option_menu(HidamariBuffer *buf, HidamariGame *game)
 {
-	static u8 const color[] = {130, 130, 130};
+	(void)game;
+
 	size_t x, y;
 
 	/* Draw the backdrop */
@@ -323,28 +339,28 @@ draw_option_menu(HidamariBuffer *buf, HidamariGame *game)
 			buf->tile[x][y] = HIDAMARI_TILE_SPACE;
 		}
 	}
-	buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 3, "OPTION");
-	buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 7, "AI ");
+	buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 3, false, "OPTION");
+	draw_menu_item(buf, 9, HIDAMARI_BUFFER_HEIGHT - 7, game->cursor[1], 0, "AI ");
 	if (game->ai.active) {
-		buf_write_cstr(buf, 12, HIDAMARI_BUFFER_HEIGHT - 7, "ON");
+		draw_menu_item(buf, 12, HIDAMARI_BUFFER_HEIGHT - 7, game->cursor[1], 0, "ON");
 	} else {
-		buf_write_cstr(buf, 12, HIDAMARI_BUFFER_HEIGHT - 7, "OFF");
+		draw_menu_item(buf, 12, HIDAMARI_BUFFER_HEIGHT - 7, game->cursor[1], 0, "OFF");
 	}
 	switch (game->ai.skill) {
 		case HIDAMARI_AI_POOR:
-			buf_write_cstr(buf, 10, HIDAMARI_BUFFER_HEIGHT - 9, "POOR");
+			draw_menu_item(buf, 10, HIDAMARI_BUFFER_HEIGHT - 9, game->cursor[1], 1, "POOR");
 			break;
 		case HIDAMARI_AI_NORMAL:
-			buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 9, "NORMAL");
+			draw_menu_item(buf, 9, HIDAMARI_BUFFER_HEIGHT - 9, game->cursor[1], 1, "NORMAL");
 			break;
 		case HIDAMARI_AI_SKILLED:
-			buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 9, "SKILLED");
+			draw_menu_item(buf, 9, HIDAMARI_BUFFER_HEIGHT - 9, game->cursor[1], 1, "SKILLED");
 			break;
 		case HIDAMARI_AI_GODLIKE:
-			buf_write_cstr(buf, 9, HIDAMARI_BUFFER_HEIGHT - 9, "GODLIKE");
+			draw_menu_item(buf, 9, HIDAMARI_BUFFER_HEIGHT - 9, game->cursor[1], 1, "GODLIKE");
 			break;
 	}
-	buf_write_cstr(buf, 10, HIDAMARI_BUFFER_HEIGHT - 11, "BACK");
+	draw_menu_item(buf, 10, HIDAMARI_BUFFER_HEIGHT - 11, game->cursor[1], 2, "BACK");
 }
 
 /* Shift all lines above a certain y value down by one */
@@ -678,7 +694,7 @@ option_menu(HidamariGame *game, Button act)
 				game->ai.active = !game->ai.active;
 				return HIDAMARI_GS_OPTION_MENU;
 			case 1:
-				game->ai.skill = (game->ai.skill + 1) % 3;
+				game->ai.skill = (game->ai.skill + 1) % HIDAMARI_AI_LAST;
 				return HIDAMARI_GS_OPTION_MENU;
 			case 2:
 				return HIDAMARI_GS_MAIN_MENU;
@@ -701,15 +717,33 @@ hidamari_init(HidamariGame *game)
 	game->ai.region = region_create(ai_size_requirement());
 	game->ai.planstr = &dbv;
 	game->ai.active = false;
+	game->ai.skill = HIDAMARI_AI_GODLIKE;
 }
 
 void
 hidamari_update(HidamariGame *game, Button act)
 {
-	//double weight[3] = {28.586806, 77.649833, 61.638933};
-	//double weight[3] = {1.487517, 4.727170, 3.072305};
-	//double weight[3] = {0.3146738, 1, 0.649924};
-	double weight[3] = {0.848058, 2.304684, 1.405450};
+	double poor[3] = {28.586806, 77.649833, 61.638933};
+	double normal[3] = {1.487517, 4.727170, 3.072305};
+	double skilled[3] = {0.3146738, 1, 0.649924};
+	double godlike[3] = {0.848058, 2.304684, 1.405450};
+
+	double *weight = poor;
+
+	switch (game->ai.skill) {
+	case HIDAMARI_AI_POOR:
+		weight = poor;
+		break;
+	case HIDAMARI_AI_NORMAL:
+		weight = normal;
+		break;
+	case HIDAMARI_AI_SKILLED:
+		weight = skilled;
+		break;
+	case HIDAMARI_AI_GODLIKE:
+		weight = godlike;
+		break;
+	}
 
 	switch(game->state) {
 	case HIDAMARI_GS_MAIN_MENU:
