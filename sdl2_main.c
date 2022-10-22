@@ -21,20 +21,18 @@ render(SDL_Renderer *renderer, SDL_Texture *texture, HidamariBuffer *buf)
 	SDL_Rect src_r = {.h = TILE_S, .w = TILE_S, .x = 0, .y = 0};
 	SDL_Rect dest_r = {.h = TILE_S, .w = TILE_S, .x = 0, .y = 0};
 	char tile;
+	u8 *color;
 
 	SDL_RenderClear(renderer);
 	/* Render the static grid */
 	for (i = 0; i < HIDAMARI_BUFFER_WIDTH; ++i) {
 		for (j = 0; j < HIDAMARI_BUFFER_HEIGHT; ++j) {
 
-			// Set hihglighting
-			if (buf->highlight[HIDAMARI_BUFFER_WIDTH - 1 - i][HIDAMARI_BUFFER_HEIGHT - 1 - j] == true) {
-				SDL_SetTextureColorMod(texture, 100, 100, 100);
-			} else {
-				SDL_SetTextureColorMod(texture, 255, 255, 255);
-			}
-
 			tile = buf->tile[HIDAMARI_BUFFER_WIDTH - 1 - i][HIDAMARI_BUFFER_HEIGHT - 1 -j];
+			color = buf->color[HIDAMARI_BUFFER_WIDTH - 1 - i][HIDAMARI_BUFFER_HEIGHT - 1 -j];
+
+			// Set color
+			SDL_SetTextureColorMod(texture, color[0], color[1], color[2]);
 
 			if (HIDAMARI_TILE_SPACE == tile)
 				continue;
